@@ -1,0 +1,841 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-title" content="Guía Profe xD">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Guía Profe xD</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: un tablero de juego de mesa en columna (móvil primero); cada unidad es una zona de color con sus casillas */
+:root{
+  --bg:#e4efe9; --board:#f7fbf8; --card:#ffffff; --ink:#18263a; --muted:#56657a; --line:#c9d8d0;
+  --accent:#ff5a3c; --accent-ink:#ffffff; --ok:#169c5b; --ok-bg:#dcf5e7; --bad:#d42a3a; --bad-bg:#fde3e5;
+  --hint-bg:#fff4cc; --hint-line:#e9c645; --cell-on:#ffe08a; --cell-on2:#b9e4ff;
+  --z1:#2f6fd6; --z2:#8a4fd8; --z3:#e2771b; --z4:#11968f; --z5:#d93b78; --z6:#4f8a1f;
+  --f-display:"Bungee","Arial Black",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1724; --board:#152236; --card:#1b2a40; --ink:#eaf1fb; --muted:#9db0c8; --line:#2c3f5a;
+  --accent:#ff6d52; --accent-ink:#1a0d08; --ok:#3fd38a; --ok-bg:#103a28; --bad:#ff6b78; --bad-bg:#3d1720;
+  --hint-bg:#3a3214; --hint-line:#a88a1e; --cell-on:#7a6114; --cell-on2:#1d5577;
+  --z1:#6b9dff; --z2:#b58cff; --z3:#ff9e4a; --z4:#37cfc5; --z5:#ff6fa6; --z6:#8fcf55; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1724; --board:#152236; --card:#1b2a40; --ink:#eaf1fb; --muted:#9db0c8; --line:#2c3f5a;
+  --accent:#ff6d52; --accent-ink:#1a0d08; --ok:#3fd38a; --ok-bg:#103a28; --bad:#ff6b78; --bad-bg:#3d1720;
+  --hint-bg:#3a3214; --hint-line:#a88a1e; --cell-on:#7a6114; --cell-on2:#1d5577;
+  --z1:#6b9dff; --z2:#b58cff; --z3:#ff9e4a; --z4:#37cfc5; --z5:#ff6fa6; --z6:#8fcf55; color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 40px;
+  -webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;text-wrap:balance;margin:0;line-height:1.1}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+a{color:var(--z1)}
+p{margin:0 0 .6em}
+
+/* ---------- barra superior ---------- */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;align-items:center;gap:8px;padding-block:10px;margin-inline:-4px}
+.top .sp{flex:1}
+.chip{display:inline-flex;align-items:center;gap:5px;background:var(--card);border:1.5px solid var(--line);border-radius:999px;padding:5px 11px;font-weight:700;font-size:15px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.chip.fire{border-color:var(--accent);color:var(--accent)}
+.iconbtn{width:40px;height:40px;border-radius:12px;background:var(--card);border:1.5px solid var(--line);font-size:18px;display:grid;place-items:center}
+
+/* ---------- portada ---------- */
+.hero{display:flex;flex-direction:column;gap:10px;padding-top:6px}
+.logo{font-family:var(--f-display);font-size:clamp(34px,10vw,52px);line-height:.95;letter-spacing:.5px}
+.logo span{color:var(--accent)}
+.hero .sub{color:var(--muted);font-size:15px;margin:0}
+.dice-row{display:flex;gap:8px}
+.die{width:44px;height:44px;border-radius:10px;background:var(--card);border:2px solid var(--ink);display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:6px;box-shadow:0 3px 0 var(--ink)}
+.die i{width:7px;height:7px;border-radius:50%;background:var(--ink);place-self:center;visibility:hidden}
+.die i.on{visibility:visible}
+.die.red{background:var(--accent);border-color:var(--ink)}
+.die.red i{background:#fff}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:10px 8px;text-align:center}
+.stat b{display:block;font-family:var(--f-display);font-size:22px;font-variant-numeric:tabular-nums}
+.stat small{color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.rank{display:flex;align-items:center;gap:10px;background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:10px 12px}
+.rank .bar{flex:1;height:10px;background:var(--line);border-radius:99px;overflow:hidden}
+.rank .bar i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .6s}
+.rank .lbl{font-weight:700;font-size:15px}
+.rank small{color:var(--muted);font-size:13px;white-space:nowrap}
+.big{display:block;width:100%;background:var(--accent);color:var(--accent-ink);font-family:var(--f-display);font-size:19px;padding:15px;border-radius:16px;box-shadow:0 4px 0 var(--ink);transition:transform .08s}
+.big:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.big.alt{background:var(--card);color:var(--ink);border:2px solid var(--ink)}
+
+.zone{background:var(--board);border:2px solid var(--zc);border-radius:20px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.zone-h{display:flex;align-items:center;gap:10px}
+.zone-h .badge{width:40px;height:40px;border-radius:12px;background:var(--zc);color:#fff;display:grid;place-items:center;font-family:var(--f-display);font-size:16px;flex:none}
+.zone-h h2{font-size:17px;flex:1;min-width:0}
+.zone-h .zs{font-size:13px;color:var(--muted);font-weight:700;white-space:nowrap}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.tile{aspect-ratio:1;max-width:100%;border-radius:14px;background:var(--card);border:2px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-family:var(--f-display);font-size:20px;position:relative}
+.tile small{font-family:var(--f-body);font-size:11px;letter-spacing:1px;color:var(--muted)}
+.tile.done{border-color:var(--zc);background:color-mix(in srgb,var(--zc) 14%,var(--card))}
+.tile.done small{color:var(--zc)}
+.tile.next{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,transparent)}
+.tile .tag-video{position:absolute;top:4px;right:6px;font-size:11px}
+.zbtn{align-self:flex-start;font-weight:700;font-size:14px;color:var(--zc);padding:4px 0}
+.foot{color:var(--muted);font-size:13px;text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center}
+.linkbtn{color:var(--muted);text-decoration:underline;font-size:13px}
+
+/* ---------- pantalla de juego ---------- */
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:16px;min-width:0}
+.ex-title{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.ex-num{width:46px;height:46px;border-radius:12px;background:var(--zc);color:#fff;font-family:var(--f-display);font-size:20px;display:grid;place-items:center;flex:none}
+.ex-title .zn{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--zc);font-weight:700}
+.ex-title .st{font-size:14px;color:var(--muted)}
+.q ol{padding-left:22px;margin:.4em 0}
+.q li{margin:.2em 0}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.tag{font-size:12.5px;font-weight:700;border-radius:8px;padding:4px 8px;text-decoration:none}
+.tag.v{background:var(--bad-bg);color:var(--bad)}
+.tag.s{background:var(--ok-bg);color:var(--ok)}
+
+.chart{background:var(--card);border-radius:10px;margin:8px 0;overflow-x:auto}
+.chart svg{width:100%;height:auto;display:block;min-width:300px}
+.chart svg text{fill:var(--ink)}
+.chart svg rect{fill:#fff}
+.scroll{overflow-x:auto;margin:8px 0}
+table{border-collapse:collapse;font-variant-numeric:tabular-nums}
+table.data th,table.data td{border:1px solid var(--line);padding:6px 9px;text-align:center;font-size:15px}
+table.data th{background:var(--board);white-space:nowrap}
+table.grid th,table.grid td{width:34px;height:32px;text-align:center;border:1px solid var(--line);font-size:14px}
+table.grid th{background:var(--board)}
+table.grid td.on{background:var(--cell-on);font-weight:700}
+table.grid td.on2{background:var(--cell-on2);font-weight:700}
+.set{font-family:var(--f-mono);font-size:.92em;background:var(--board);border:1px solid var(--line);border-radius:6px;padding:1px 5px;white-space:normal;overflow-wrap:anywhere}
+pre.set{white-space:pre;overflow-x:auto}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;line-height:1.1;margin:0 2px;font-variant-numeric:tabular-nums}
+.fr span:first-child{border-bottom:1.5px solid currentColor;padding:0 3px}
+
+.part{border-top:2px dashed var(--line);padding-top:14px;margin-top:14px;display:flex;flex-direction:column;gap:10px}
+.part .pl{font-weight:700}
+.part .pl em{font-style:normal;color:var(--zc);font-family:var(--f-display);font-size:14px;margin-right:6px}
+.part.locked{opacity:.4;pointer-events:none}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{text-align:left;background:var(--board);border:2px solid var(--line);border-radius:14px;padding:12px 14px;font-size:16px;line-height:1.3;min-height:50px;transition:transform .08s}
+.opt:active{transform:scale(.98)}
+.opt.right{border-color:var(--ok);background:var(--ok-bg);font-weight:700}
+.opt.wrong{border-color:var(--bad);background:var(--bad-bg);text-decoration:line-through;opacity:.8}
+.opt:disabled{cursor:default}
+.inrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.frin{display:inline-flex;flex-direction:column;align-items:center;gap:4px}
+.frin hr{width:78px;border:0;border-top:3px solid var(--ink);margin:0}
+.num{width:78px;height:52px;border-radius:12px;border:2px solid var(--line);background:var(--board);color:var(--ink);font:700 24px var(--f-body);text-align:center;font-variant-numeric:tabular-nums}
+.num.solo{width:100px}
+.check{background:var(--ink);color:var(--bg);font-weight:700;border-radius:12px;padding:12px 18px;font-size:16px}
+.ptag{font-size:13px;color:var(--muted)}
+.fb{border-radius:14px;padding:11px 13px;font-size:15.5px;display:flex;gap:10px;align-items:flex-start}
+.fb .bot{font-size:24px;line-height:1}
+.fb.ok{background:var(--ok-bg);color:var(--ink);border:1.5px solid var(--ok)}
+.fb.bad{background:var(--bad-bg);color:var(--ink);border:1.5px solid var(--bad)}
+.fb.reveal{background:var(--board);border:1.5px solid var(--line)}
+.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-3px)}}
+.hintbox{background:var(--hint-bg);border:1.5px solid var(--hint-line);border-radius:14px;padding:11px 13px;font-size:15.5px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap}
+.tbtn{flex:1;min-width:140px;background:var(--card);border:2px solid var(--ink);border-radius:14px;padding:11px;font-weight:700;font-size:15px}
+.tbtn:disabled{opacity:.45}
+
+.winbox{text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center}
+.winbox h3{font-size:24px}
+.stars{font-size:38px;letter-spacing:6px}
+.stars .off{opacity:.2;filter:grayscale(1)}
+.bonus{display:flex;align-items:center;gap:14px;justify-content:center;flex-wrap:wrap}
+.die.big-die{width:64px;height:64px;padding:9px}
+.die.big-die i{width:10px;height:10px}
+.die.roll{animation:roll .6s ease-out}
+@keyframes roll{0%{transform:rotate(0) scale(.6)}60%{transform:rotate(380deg) scale(1.15)}100%{transform:rotate(360deg) scale(1)}}
+details.sol{width:100%;text-align:left;background:var(--board);border:1.5px solid var(--line);border-radius:14px;padding:4px 14px}
+details.sol summary{font-weight:700;padding:10px 0;cursor:pointer}
+.step{display:flex;gap:10px;margin:8px 0}
+.step .n{flex:none;width:24px;height:24px;border-radius:50%;background:var(--zc);color:#fff;font-size:13px;font-weight:700;display:grid;place-items:center;margin-top:1px}
+.step>div{min-width:0}
+.ans{background:var(--ok-bg);border-left:4px solid var(--ok);border-radius:8px;padding:8px 10px;margin:8px 0;font-weight:700}
+.note,.trap{font-size:15px;background:var(--hint-bg);border-radius:8px;padding:8px 10px}
+h5{font-family:var(--f-display);font-weight:400;font-size:15px;margin:12px 0 4px;color:var(--zc)}
+.medal{background:var(--zc);color:#fff;border-radius:16px;padding:12px 14px;font-weight:700;width:100%}
+
+.brief h4{font-family:var(--f-display);font-weight:400;font-size:16px;margin:0 0 8px;color:var(--zc)}
+.brief ul{padding-left:20px;margin:.4em 0}
+.brief li{margin:.35em 0}
+
+#fx{position:fixed;inset:0;pointer-events:none;z-index:50}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:700;z-index:60;font-size:15px;white-space:nowrap}
+@media (max-width:380px){.tiles{grid-template-columns:repeat(4,1fr);gap:6px}.tile{font-size:17px}.stat b{font-size:19px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<canvas id="fx"></canvas>
+<div class="wrap" id="app"></div>
+<script>
+const VQ={10:1,87:2,134:3,198:4,224:5,325:6,429:7,510:8,626:9,725:10,779:11,837:12,907:13,973:14,1184:15,1238:16};
+const VID = "https://www.youtube.com/watch?v=kn1q-PXM8lc&t=";
+const F = s => s.replace(/\[\[(.+?)\/(.+?)\]\]/g,'<span class="fr"><span>$1</span><span>$2</span></span>');
+const S = s => `<span class="set">${s}</span>`;
+function steps(arr){return arr.map((t,i)=>`<div class="step"><span class="n">${i+1}</span><div>${t}</div></div>`).join('')}
+
+/* ---------- Gráfico de dispersión en SVG ---------- */
+function scatter(o){
+  const W=520,H=300,L=52,R=16,T=30,B=48, pw=W-L-R, ph=H-T-B;
+  const sx=x=>L+(x-o.x[0])/(o.x[1]-o.x[0])*pw, sy=y=>T+ph-(y-o.y[0])/(o.y[1]-o.y[0])*ph;
+  let g=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${o.title}"><rect x="${L}" y="${T}" width="${pw}" height="${ph}" fill="#fff" stroke="#bbb"/>`;
+  g+=`<text x="${L+pw/2}" y="18" text-anchor="middle" font-weight="800" font-size="14">${o.title}</text>`;
+  o.xt.forEach(v=>{g+=`<line x1="${sx(v)}" x2="${sx(v)}" y1="${T}" y2="${T+ph}" stroke="#eee"/><text x="${sx(v)}" y="${T+ph+16}" text-anchor="middle" font-size="12" fill="#555">${v}</text>`});
+  o.yt.forEach(v=>{g+=`<line x1="${L}" x2="${L+pw}" y1="${sy(v)}" y2="${sy(v)}" stroke="#eee"/><text x="${L-6}" y="${sy(v)+4}" text-anchor="end" font-size="12" fill="#555">${v}</text>`});
+  g+=`<text x="${L+pw/2}" y="${H-8}" text-anchor="middle" font-size="12.5" font-weight="700">${o.xl}</text>`;
+  g+=`<text transform="translate(14 ${T+ph/2}) rotate(-90)" text-anchor="middle" font-size="12.5" font-weight="700">${o.yl}</text>`;
+  if(o.line){const [a,b]=o.line;g+=`<line x1="${sx(a[0])}" y1="${sy(a[1])}" x2="${sx(b[0])}" y2="${sy(b[1])}" stroke="${o.lineColor||'#2f6fd6'}" stroke-width="2.2" ${o.dash?'stroke-dasharray="6 5"':''}/>`;}
+  (o.series||[{pts:o.pts}]).forEach(s=>{
+    s.pts.forEach(([x,y])=>{
+      const X=sx(x),Y=sy(y);
+      if(s.shape==='tri') g+=`<polygon points="${X},${Y-7} ${X-6.5},${Y+5} ${X+6.5},${Y+5}" fill="${s.fill||'#f6b26b'}" stroke="#333"/>`;
+      else g+=`<circle cx="${X}" cy="${Y}" r="5.5" fill="${s.fill||'#9fb8e8'}" stroke="#333"/>`;
+    });
+  });
+  (o.marks||[]).forEach(([x,y])=>{g+=`<circle cx="${sx(x)}" cy="${sy(y)}" r="12" fill="none" stroke="#c0262d" stroke-width="2.5"/>`});
+  return `<div class="chart">${g}</svg></div>`;
+}
+
+/* ---------- Tabla de dos dados ---------- */
+function diceTable(test, cls='on', mode='sum', test2){
+  let h='<div class="scroll"><table class="grid"><tr><th>'+(mode==='sum'?'+':'×')+'</th>'+[1,2,3,4,5,6].map(n=>`<th>${n}</th>`).join('')+'</tr>';
+  for(let a=1;a<=6;a++){h+=`<tr><th>${a}</th>`;for(let b=1;b<=6;b++){const v=mode==='sum'?a+b:a*b;let c='';if(test&&test(v,a,b))c=cls;if(test2&&test2(v,a,b))c='on2';h+=`<td class="${c}">${v}</td>`}h+='</tr>'}
+  return h+'</table></div>';
+}
+
+/* ---------- Datos de los gráficos (aproximados a la guía) ---------- */
+const G1=scatter({title:"Horas de práctica vs. errores",x:[0,13],y:[0,32],xt:[0,5,10],yt:[0,10,20,30],xl:"Horas de práctica semanal",yl:"Errores",
+  pts:[[2,27],[4,25],[7,19],[8.5,18],[9,19],[9.5,17],[10,17],[10.3,13],[11,14],[12,10],[12.5,11],[12.8,9]],line:[[1.5,30],[12.8,8]]});
+const G2=scatter({title:"Estatura vs. nota en Historia",x:[138,190],y:[1.5,7.2],xt:[140,160,180],yt:[2,4,6],xl:"Estatura (cm)",yl:"Nota",
+  pts:[[140,4],[141,5],[142,5.3],[149,4],[153,3.2],[156,6.3],[160,4.2],[167,6.3],[167,5.7],[170,3.2],[171,6.8],[176,6.8],[176,5],[179,5.6],[180,5.5],[181,4],[181,5.2],[183,4.7],[184,5.8]]});
+const G3=scatter({title:"Superficie vs. precio",x:[30,125],y:[3,17],xt:[40,60,80,100,120],yt:[5,10,15],xl:"Superficie (m²)",yl:"Precio (millones $)",
+  pts:[[36,5.5],[50,7],[52,8],[55,7.5],[58,8.3],[60,8],[68,9.5],[75,10],[80,10.5],[83,11],[88,12],[95,12.2],[98,13],[105,14],[112,15]],line:[[36,5],[115,15.5]]});
+const G4=scatter({title:"Horas de videojuegos vs. promedio",x:[0,6.5],y:[1,7],xt:[0,2,4,6],yt:[2,4,6],xl:"Horas diarias de videojuegos",yl:"Promedio",
+  pts:[[0.2,6],[0.5,5.8],[1,5.9],[1.2,5.8],[1.5,6.1],[1.8,5.8],[2,6],[2.2,6.2],[2.4,5.9],[2.5,5.2],[2.8,6],[3,6.1],[3.1,3.5],[3.5,5.8],[3.6,5.2],[3.8,6],[4,5.9],[4.1,5.4],[4.4,5.9],[4.7,5.9],[4.8,5.2],[5,6.4],[5.8,5.5],[5.8,4.2]],line:[[0,6.2],[6.2,5.0]]});
+const G5=(marks)=>scatter({title:"Estatura vs. masa",x:[140,200],y:[35,102],xt:[140,150,160,170,180,190,200],yt:[40,60,80,100],xl:"Estatura (cm)   ● Gimnastas   ▲ Basquetbolistas",yl:"Masa (kg)",
+  series:[{pts:[[143,43],[147,45],[148,40],[149,44],[150,46],[151,42],[152,47],[155,46],[157,49],[170,66]],fill:'#9fb8e8'},
+          {shape:'tri',pts:[[166,63],[178,80],[180,86],[182,70],[184,82],[184,85],[185,90],[185,93],[187,91],[188,98],[189,80],[191,87],[192,99],[192,89]]}],
+  line:[[150,85],[192,44]],dash:true,lineColor:'#333',marks});
+const G6=scatter({title:"Temperatura vs. asistentes a la piscina",x:[16,34],y:[30,135],xt:[18,20,22,24,26,28,30,32],yt:[40,60,80,100,120],xl:"Temperatura máxima (°C)",yl:"Asistentes",
+  pts:[[18,40],[20,55],[22,60],[24,80],[26,85],[28,100],[30,120],[32,125]],line:[[18,40],[32,128]]});
+
+/* ---------- Contenido ---------- */
+const units=[
+{id:"u1",title:"I. Nube de puntos y correlación lineal",
+ theory:`<h4>Lo que tienes que saber</h4>
+ <p>Una <b>nube de puntos</b> (o diagrama de dispersión) muestra dos datos de cada persona o cosa: uno en el eje horizontal (x) y otro en el vertical (y). Para clasificar la correlación te fijas en dos cosas:</p>
+ <ul><li><b>Signo</b>, o sea, hacia dónde va la nube:<br>↗ sube de izquierda a derecha → <b>positiva</b> (si una variable aumenta, la otra también).<br>↘ baja → <b>negativa</b> (si una aumenta, la otra disminuye).<br>Sin forma, puntos por todos lados → <b>nula</b> (no hay relación).</li>
+ <li><b>Intensidad</b>, o sea, qué tan juntos están los puntos de una recta imaginaria: muy pegados → <b>fuerte</b>; se nota la tendencia pero están más desordenados → <b>débil</b>.</li></ul>
+ <p>⚠️ Una correlación es una <b>tendencia</b>, no una regla que cumplan todos. Siempre puede haber casos que no siguen el patrón.</p>`,
+ ex:[
+ {n:1,q:`<p>Un profesor de piano registró las horas semanales de práctica de sus alumnos y la cantidad de errores que cometieron en una audición.</p>${G1}<ol type="a"><li>¿Qué tipo de correlación se observa? ¿Es fuerte o débil?</li><li>Interpreta el resultado en el contexto del problema.</li></ol>`,
+  v:[[87,"Correlación negativa fuerte (min 1:27)"]],
+  hint:`Mira la nube de izquierda a derecha. ¿Los puntos suben o bajan? ¿Están cerca de la recta o muy desparramados?`,
+  sol:`<h5>a)</h5>${steps([
+   `Miro hacia dónde va la nube: a la izquierda (pocas horas) los puntos están <b>arriba</b> (muchos errores), y a la derecha (muchas horas) están <b>abajo</b> (pocos errores). La nube <b>baja</b> ↘, así que es <b>negativa</b>.`,
+   `Miro qué tan cerca están de la recta: casi todos los puntos están pegados a ella, así que es <b>fuerte</b>.`])}
+   <div class="ans">a) Correlación lineal negativa fuerte.</div>
+   <h5>b)</h5><p>En palabras del problema: <b>mientras más horas practican los alumnos, menos errores tienden a cometer en la audición.</b></p>
+   <div class="ans">b) A mayor práctica semanal, menos errores.</div>`},
+ {n:2,q:`<p>Se registró la estatura de un grupo de estudiantes y su nota en Historia.</p>${G2}<ol type="a"><li>¿Qué tipo de correlación se observa? Justifica observando la forma de la nube.</li><li>¿Se podría predecir la nota de un estudiante conociendo su estatura? ¿Por qué?</li></ol>`,
+  v:[[198,"Correlación nula (min 3:18)"]],
+  hint:`Intenta trazar una recta que pase cerca de todos los puntos. ¿Se puede, ya sea subiendo o bajando?`,
+  sol:`<h5>a)</h5>${steps([
+   `Trato de imaginar una recta que suba: no funciona, porque hay alumnos bajos con nota alta y alumnos altos con nota baja.`,
+   `Trato de imaginar una recta que baje: tampoco funciona.`,
+   `Los puntos están <b>desparramados sin ninguna forma</b>, así que no hay tendencia.`])}
+   <div class="ans">a) Correlación nula: la nube no sube ni baja, está dispersa.</div>
+   <h5>b)</h5><p><b>No.</b> Como no hay relación entre las dos variables, saber cuánto mide alguien no dice nada de su nota. Por ejemplo, entre los que miden unos 170 cm hay notas de 3,2 y también de 6,8.</p>
+   <div class="ans">b) No se puede predecir, porque la correlación es nula.</div>`},
+ {n:3,q:`<p>En una inmobiliaria se registró la superficie de varios departamentos y su precio de venta.</p>${G3}<ol type="a"><li>Clasifica la correlación según su signo y su intensidad.</li><li>Según la tendencia, ¿un departamento de 100 m² costará más o menos que uno de 50 m²? Explica.</li></ol>`,
+  v:[[10,"Correlación positiva (min 0:10)"]],
+  hint:`Signo: ¿la nube sube o baja? Intensidad: ¿los puntos están pegados a la recta? Para la b), busca 50 y 100 en el eje horizontal y sube hasta la recta.`,
+  sol:`<h5>a)</h5>${steps([`La nube <b>sube</b> ↗: a más metros cuadrados, más precio. Es <b>positiva</b>.`,`Los puntos están muy pegados a la recta, así que es <b>fuerte</b>.`])}
+   <div class="ans">a) Correlación positiva fuerte.</div>
+   <h5>b)</h5>${steps([`Busco 50 m² en el eje x y subo hasta la recta: el precio es cerca de <b>7 millones</b>.`,`Busco 100 m² y subo hasta la recta: el precio es cerca de <b>13 millones</b>.`,`Como la correlación es positiva, al aumentar la superficie aumenta el precio.`])}
+   <div class="ans">b) Costará <b>más</b> (aprox. 13 millones contra 7 millones), porque a mayor superficie, mayor precio.</div>`},
+ {n:4,q:`<p>Se registraron las horas diarias que 24 estudiantes dedican a los videojuegos y su promedio de notas.</p>${G4}<ol type="a"><li>¿La correlación es positiva o negativa? ¿Fuerte o débil?</li><li>Explica por qué <b>no</b> se puede afirmar que todo estudiante que juega mucho tiene un promedio bajo.</li></ol>`,
+  v:[[134,"Negativa con dispersión (min 2:14)"]],
+  hint:`La recta baja un poquito. ¿Todos los puntos siguen esa recta? Fíjate en los alumnos que juegan 5 o 6 horas: ¿qué promedios tienen?`,
+  sol:`<h5>a)</h5>${steps([`La recta <b>baja</b> levemente: a más horas de juego, el promedio tiende a bajar. Es <b>negativa</b>.`,`La bajada es muy suave y hay puntos que se alejan de la recta (por ejemplo, uno que juega 3 horas y tiene 3,5), así que es <b>débil</b>.`])}
+   <div class="ans">a) Correlación negativa débil.</div>
+   <h5>b)</h5><p>La correlación muestra una <b>tendencia</b>, no una regla para todos. En el gráfico hay estudiantes que juegan unas 5 horas diarias y tienen promedio <b>6,4</b>, uno de los más altos del curso. Además, como la correlación es débil, hay muchas excepciones.</p>
+   <div class="ans">b) Porque hay alumnos que juegan mucho y tienen buen promedio. La tendencia es débil y no se cumple en todos los casos.</div>`},
+ {n:5,q:`<p>Se registró la estatura y la masa de un grupo de gimnastas (●) y de basquetbolistas (▲). Se trazó una recta para separar ambos grupos.</p>${G5()}<ol type="a"><li>¿Qué grupo se ubica mayoritariamente sobre la recta? Describe sus características.</li><li>¿Cuántos deportistas quedan en el lado "equivocado" de la recta?</li><li>¿Es correcto afirmar que <i>todos</i> los basquetbolistas son más altos que <i>todos</i> los gimnastas? Justifica.</li></ol>`,
+  hint:`"Sobre la recta" es el lado de arriba a la derecha. Para la b), busca triángulos que queden abajo de la recta y círculos que queden arriba (están cerca de los 165–170 cm).`,
+  sol:`<h5>a)</h5><p>Sobre la recta están casi todos los <b>basquetbolistas (▲)</b>. Son los más <b>altos</b> (entre unos 178 y 192 cm) y más <b>pesados</b> (entre 70 y 100 kg). Las gimnastas están abajo a la izquierda: más bajas (143–157 cm) y livianas (40–50 kg).</p>
+   <div class="ans">a) Los basquetbolistas: más altos y con más masa.</div>
+   <h5>b)</h5>${G5([[166,63],[170,66]])}${steps([`Busco triángulos <b>debajo</b> de la recta: hay uno en (166 cm, 63 kg).`,`Busco círculos <b>encima</b> de la recta: hay uno en (170 cm, 66 kg).`])}
+   <div class="ans">b) 2 deportistas (1 basquetbolista y 1 gimnasta), marcados con rojo.</div>
+   <h5>c)</h5><p><b>No es correcto.</b> La gimnasta que mide unos 170 cm es <b>más alta</b> que el basquetbolista que mide unos 166 cm. Basta un caso que no cumpla para que el "todos" sea falso.</p>
+   <div class="ans">c) No, hay una gimnasta (≈170 cm) más alta que un basquetbolista (≈166 cm).</div>`},
+ {n:6,q:`<p>La tabla muestra la temperatura máxima de 8 días de verano y la cantidad de personas que asistieron a una piscina municipal:</p>
+  <div class="scroll"><table class="data"><tr><th>T (°C)</th><td>18</td><td>20</td><td>22</td><td>24</td><td>26</td><td>28</td><td>30</td><td>32</td></tr><tr><th>Asistentes</th><td>40</td><td>55</td><td>60</td><td>80</td><td>85</td><td>100</td><td>120</td><td>125</td></tr></table></div>
+  <ol type="a"><li>Construye la nube de puntos en tu cuaderno.</li><li>Clasifica la correlación y explica su significado en el contexto.</li></ol>`,
+  hint:`Cada columna de la tabla es un punto (temperatura, asistentes). La temperatura va en el eje x y los asistentes en el eje y.`,
+  sol:`<h5>a)</h5>${steps([`Dibujo los ejes: en el horizontal la <b>temperatura</b> (de 18 a 32, de 2 en 2) y en el vertical los <b>asistentes</b> (de 0 a 140, de 20 en 20).`,`Cada día es un punto: ${S('(18, 40)')}, ${S('(20, 55)')}, ${S('(22, 60)')}, ${S('(24, 80)')}, ${S('(26, 85)')}, ${S('(28, 100)')}, ${S('(30, 120)')}, ${S('(32, 125)')}.`,`Marco cada punto y debería quedar así:`])}${G6}
+   <h5>b)</h5><p>La nube <b>sube</b> y los puntos están casi en línea recta: es una <b>correlación positiva fuerte</b>. En el contexto: <b>mientras más calor hace, más personas van a la piscina.</b></p>
+   <div class="ans">b) Positiva fuerte: a mayor temperatura, más asistentes.</div>`}
+ ]},
+{id:"u2",title:"II. Espacio muestral (Ω)",
+ theory:`<h4>Lo que tienes que saber</h4>
+ <p>El <b>espacio muestral Ω</b> (omega) es la lista de <b>todos</b> los resultados posibles de un experimento. <b>#Ω</b> es la cantidad de elementos que tiene.</p>
+ <ul><li>Cuando hay <b>dos o más experimentos</b> (moneda y dado, dos monedas…), haz un <b>diagrama de árbol</b>: el primer experimento abre ramas, y de cada rama salen las del segundo. Cada camino completo es un elemento de Ω.</li>
+ <li><b>Principio multiplicativo</b>: si el primero tiene <i>m</i> resultados y el segundo <i>n</i>, en total hay <b>m × n</b>.</li>
+ <li><b>Sin reposición</b>: lo que sacas no vuelve, así que no se puede repetir. <b>Con reposición</b>: lo devuelves y sí se puede repetir.</li></ul>`,
+ ex:[
+ {n:7,q:`<p>Se lanza una moneda (Cara C, Sello S) y luego un dado de 4 caras numeradas del 1 al 4.</p><ol type="a"><li>Escribe el espacio muestral Ω como pares ordenados.</li><li>¿Cuántos elementos tiene Ω?</li></ol>`,
+  v:[[224,"Moneda y dado con árbol (min 3:44)"]],
+  hint:`Haz un árbol: primero la moneda (2 ramas) y de cada una salen 4 ramas para el dado.`,
+  sol:`${steps([`Primera rama, la moneda: <b>C</b> o <b>S</b>.`,`De cada una salen 4 ramas, el dado: 1, 2, 3, 4.`,`Escribo cada camino como par (moneda, dado).`])}
+   <p>Ω = ${S('{(C,1), (C,2), (C,3), (C,4), (S,1), (S,2), (S,3), (S,4)}')}</p>
+   <p>Para comprobar con el principio multiplicativo: 2 resultados de la moneda × 4 del dado = <b>8</b>.</p>
+   <div class="ans">a) El Ω de arriba. b) #Ω = 8.</div>`},
+ {n:8,q:`<p>Se lanzan dos monedas, una después de la otra. Escribe el espacio muestral Ω y determina #Ω.</p>`,
+  v:[[837,"Árbol de dos monedas (min 13:57)"],[429,"Árbol de tres monedas (min 7:09)"]],
+  hint:`Primera moneda: C o S. De cada resultado sale otra vez C o S.`,
+  sol:`<pre class="set" style="display:block;padding:10px;line-height:1.5">1ª moneda   2ª moneda   resultado
+   C ──┬──── C ────────  CC
+       └──── S ────────  CS
+   S ──┬──── C ────────  SC
+       └──── S ────────  SS</pre>
+   <p>Ω = ${S('{CC, CS, SC, SS}')}. Ojo: <b>CS</b> y <b>SC</b> son distintos, porque importa qué salió en la primera y qué en la segunda.</p>
+   <div class="ans">#Ω = 4 (o sea, 2 × 2)</div>`},
+ {n:9,q:`<p>En una caja hay 3 tarjetas con las letras A, B y C. Se extraen dos tarjetas, una tras otra y <b>sin reposición</b>, para formar una "palabra" de dos letras (por ejemplo, BA).</p><ol type="a"><li>Escribe todos los elementos de Ω.</li><li>¿Cuánto vale #Ω? ¿Cambiaría si la extracción fuera <b>con reposición</b>? ¿Cuánto valdría?</li></ol>`,
+  v:[[325,"Tarjetas sin reposición (min 5:25)"]],
+  hint:`Sin reposición: si sacas la A, ya no está, así que la segunda solo puede ser B o C. No pueden salir AA, BB ni CC.`,
+  sol:`<h5>a)</h5>${steps([`Si la 1ª es <b>A</b>, quedan B y C → AB, AC.`,`Si la 1ª es <b>B</b>, quedan A y C → BA, BC.`,`Si la 1ª es <b>C</b>, quedan A y B → CA, CB.`])}
+   <p>Ω = ${S('{AB, AC, BA, BC, CA, CB}')}</p>
+   <h5>b)</h5><p>#Ω = <b>6</b> (3 opciones para la primera × 2 para la segunda).</p>
+   <p><b>Con reposición</b> sí cambia: la tarjeta vuelve a la caja y se puede repetir, así que se agregan AA, BB y CC. Queda 3 × 3 = <b>9</b>.</p>
+   <div class="ans">a) {AB, AC, BA, BC, CA, CB}. b) #Ω = 6; con reposición, #Ω = 9.</div>`},
+ {n:10,q:`<p>Un experimento consiste en lanzar una moneda hasta que salga Sello (S).</p><ol type="a"><li>Escribe Ω si se permite un máximo de 2 lanzamientos.</li><li>Escribe Ω si se permite un máximo de 4 lanzamientos. ¿Cuántos elementos tiene?</li></ol>`,
+  hint:`Apenas sale S, el experimento <b>se detiene</b>. Si se acaban los lanzamientos sin sello, también se detiene (por ejemplo CC).`,
+  sol:`<h5>a) Máximo 2 lanzamientos</h5>${steps([`Si en el 1º sale <b>S</b>, se termina → <b>S</b>.`,`Si en el 1º sale C, lanzo otra vez: puede salir S → <b>CS</b>, o C → <b>CC</b> (se acabaron los lanzamientos).`])}
+   <p>Ω = ${S('{S, CS, CC}')}</p>
+   <h5>b) Máximo 4 lanzamientos</h5><p>Sigo la misma idea: mientras salga C, sigo lanzando.</p>
+   <p>Ω = ${S('{S, CS, CCS, CCCS, CCCC}')}</p>
+   <div class="ans">a) {S, CS, CC}. b) {S, CS, CCS, CCCS, CCCC} → 5 elementos.</div>`},
+ {n:11,q:`<p>Se lanza un dado de 6 caras y luego se gira una ruleta dividida en 4 sectores iguales (rojo, azul, verde y amarillo). Sin escribir todos los elementos, ¿cuántos elementos tiene Ω? Explica cómo lo calculaste.</p>`,
+  hint:`Principio multiplicativo: resultados del dado × resultados de la ruleta.`,
+  sol:`${steps([`El dado tiene <b>6</b> resultados posibles.`,`Por cada uno, la ruleta tiene <b>4</b> resultados.`,`Multiplico: 6 × 4 = 24.`])}
+   <div class="ans">#Ω = 24, usando el principio multiplicativo (6 · 4).</div>`},
+ {n:12,q:`<p>Para el almuerzo, un casino ofrece 3 platos de fondo (pollo, pescado y legumbres) y 2 postres (fruta y jalea). Se elige al azar un fondo y un postre.</p><ol type="a"><li>Escribe el espacio muestral usando las iniciales (por ejemplo, (Po, F)).</li><li>¿Cuántas combinaciones posibles hay?</li></ol>`,
+  hint:`Pollo y pescado empiezan con P, así que usa Po y Pe. Legumbres = L. Fruta = F y jalea = J.`,
+  sol:`<h5>a)</h5><p>Ω = ${S('{(Po,F), (Po,J), (Pe,F), (Pe,J), (L,F), (L,J)}')}</p>
+   <h5>b)</h5><p>3 fondos × 2 postres = <b>6</b>.</p>
+   <div class="ans">a) El Ω de arriba. b) 6 combinaciones.</div>`}
+ ]},
+{id:"u3",title:"III. Eventos o sucesos",
+ theory:`<h4>Lo que tienes que saber</h4>
+ <p>Un <b>evento</b> es un pedazo de Ω: solo los resultados que cumplen una condición. #A es cuántos elementos tiene el evento A.</p>
+ <ul><li><b>Complemento</b> A<sup>c</sup>: todo lo que está en Ω y <b>no</b> está en A.</li>
+ <li><b>Seguro</b>: pasa siempre (es todo Ω). <b>Imposible</b>: no pasa nunca (es vacío, ∅). <b>Aleatorio</b>: a veces pasa y a veces no.</li>
+ <li>"<b>y</b>" significa que se tienen que cumplir las dos condiciones a la vez.</li>
+ <li><b>Número primo</b>: tiene exactamente <b>dos</b> divisores, el 1 y él mismo. El 1 <b>no</b> es primo.</li></ul>`,
+ ex:[
+ {n:13,q:`<p>Se lanzan dos monedas, con Ω = ${S('{CC, CS, SC, SS}')}. Escribe los elementos de los siguientes eventos:</p><ol type="a"><li>A: obtener exactamente una cara.</li><li>B: no obtener sellos.</li><li>D: obtener al menos un sello.</li></ol>`,
+  hint:`"Exactamente una" = una y solo una. "Al menos uno" = uno o más.`,
+  sol:`${steps([`<b>A</b>: reviso cada elemento y cuento las C. CC tiene 2 (no sirve), CS tiene 1 ✓, SC tiene 1 ✓, SS tiene 0 (no sirve).`,`<b>B</b>: sin ninguna S → solo CC.`,`<b>D</b>: con 1 o 2 sellos → CS, SC, SS.`])}
+   <div class="ans">A = {CS, SC} &nbsp;·&nbsp; B = {CC} &nbsp;·&nbsp; D = {CS, SC, SS}</div>
+   <p class="note">Fíjate en que D es el complemento de B: "al menos un sello" es lo contrario de "ningún sello".</p>`},
+ {n:14,q:`<p>Se lanzan dos dados de 6 caras. Escribe todos los pares ordenados del evento E: <i>la suma de las caras superiores es 7</i>. ¿Cuánto vale #E?</p>`,
+  v:[[626,"Suma de dos dados (min 10:26)"]],
+  hint:`Haz la tabla de sumas como el profe. Si (1,6) sirve, (6,1) también sirve y se cuenta aparte.`,
+  sol:`<p>Tabla de sumas (fila = dado 1, columna = dado 2). En amarillo, las que suman 7:</p>${diceTable(v=>v===7)}
+   ${steps([`Busco los pares que suman 7: 1+6, 2+5, 3+4, 4+3, 5+2, 6+1.`,`Como el profe en el video, si un par sirve, su "dado vuelta" también, y son resultados distintos.`])}
+   <div class="ans">E = {(1,6), (2,5), (3,4), (4,3), (5,2), (6,1)} → #E = 6</div>`},
+ {n:15,q:`<p>Se lanzan dos dados de 6 caras. Escribe los elementos del evento F: <i>el producto de las caras superiores es 6</i>. ¿Por qué el par (1,6) y el par (6,1) se cuentan por separado?</p>`,
+  hint:`Producto = multiplicación. ¿Qué números del 1 al 6 multiplicados dan 6?`,
+  sol:`${diceTable(v=>v===6,'on','prod')}
+   ${steps([`Busco multiplicaciones que den 6 usando números del 1 al 6: 1×6, 2×3, 3×2, 6×1.`])}
+   <div class="ans">F = {(1,6), (2,3), (3,2), (6,1)} → #F = 4</div>
+   <p><b>¿Por qué (1,6) y (6,1) son distintos?</b> Porque son <b>dos dados diferentes</b> (piensa en uno rojo y uno azul). En (1,6) el rojo muestra 1 y el azul 6. En (6,1) es al revés. Son dos formas distintas de que pase, y por eso Ω tiene 36 elementos y no menos.</p>`},
+ {n:16,q:`<p>Se lanza un dado de 6 caras y se define el evento P: <i>obtener un número primo</i>.</p><ol type="a"><li>Escribe los elementos de P.</li><li>Escribe su complemento P<sup>c</sup> y describe con palabras qué significa.</li></ol>`,
+  v:[[510,"Números primos en un dado (min 8:30)"]],
+  hint:`Revisa del 1 al 6 cuántos divisores tiene cada uno. Primo = exactamente 2 divisores.`,
+  sol:`<h5>a)</h5>${steps([`<b>1</b>: solo un divisor (el 1) → no es primo.`,`<b>2</b>: divisores 1 y 2 → primo ✓`,`<b>3</b>: divisores 1 y 3 → primo ✓`,`<b>4</b>: divisores 1, 2 y 4 → no es primo.`,`<b>5</b>: divisores 1 y 5 → primo ✓`,`<b>6</b>: divisores 1, 2, 3 y 6 → no es primo.`])}
+   <div class="ans">a) P = {2, 3, 5}</div>
+   <h5>b)</h5><p>El complemento son los que quedan de Ω = {1,2,3,4,5,6}:</p>
+   <div class="ans">b) P<sup>c</sup> = {1, 4, 6}: "obtener un número que <b>no</b> es primo".</div>`},
+ {n:17,q:`<p>Clasifica cada suceso como <b>seguro</b>, <b>imposible</b> o <b>aleatorio</b>. Justifica.</p><ol type="a"><li>Al lanzar un dado de 6 caras, obtener un 7.</li><li>Al lanzar un dado de 6 caras, obtener un número menor que 7.</li><li>Al lanzar una moneda, obtener cara.</li><li>Sacar una bolita verde de una bolsa que solo tiene bolitas rojas.</li></ol>`,
+  hint:`¿Puede pasar siempre, nunca o a veces?`,
+  sol:`${steps([`<b>a)</b> El dado llega hasta 6, nunca sale 7 → <b>imposible</b>.`,`<b>b)</b> Todos los números del dado (1 al 6) son menores que 7, así que pasa siempre → <b>seguro</b>.`,`<b>c)</b> Puede salir cara o sello, no sabemos cuál → <b>aleatorio</b>.`,`<b>d)</b> No hay bolitas verdes en la bolsa → <b>imposible</b>.`])}
+   <div class="ans">a) imposible · b) seguro · c) aleatorio · d) imposible</div>`},
+ {n:18,q:`<p>Se extrae una ficha de una bolsa con fichas numeradas del 1 al 10. Escribe los elementos y la cardinalidad de cada evento:</p><ol type="a"><li>G: obtener un múltiplo de 4.</li><li>H: obtener un número que sea múltiplo de 2 y también de 3.</li><li>K: obtener un número par mayor que 5.</li></ol>`,
+  v:[[725,"Múltiplo de 3 y mayor que 5 (min 12:05)"]],
+  hint:`Múltiplos = la tabla de ese número. Cuando dice "y", el número tiene que cumplir las dos condiciones.`,
+  sol:`<p>Ω = ${S('{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}')}</p>
+   ${steps([`<b>G</b>: tabla del 4 hasta 10 → 4, 8.`,`<b>H</b>: múltiplos de 2 → 2, 4, 6, 8, 10. Múltiplos de 3 → 3, 6, 9. El único que está en las dos listas es el <b>6</b>.`,`<b>K</b>: pares → 2, 4, 6, 8, 10. Los mayores que 5 son 6, 8, 10.`])}
+   <div class="ans">G = {4, 8}, #G = 2 &nbsp;·&nbsp; H = {6}, #H = 1 &nbsp;·&nbsp; K = {6, 8, 10}, #K = 3</div>`}
+ ]},
+{id:"u4",title:"IV. Regla de Laplace",
+ theory:`<h4>Lo que tienes que saber</h4>
+ <p>Si todos los resultados tienen la misma posibilidad (dado, moneda o tómbola bien hechos):</p>
+ <p style="font-size:18px;text-align:center">P(A) = ${F('[[casos favorables/casos totales]]')} = ${F('[[#A/#Ω]]')}</p>
+ <ul><li>Siempre está entre 0 (imposible) y 1 (seguro).</li><li><b>Simplifica</b> la fracción si se puede (3/15 = 1/5).</li><li>Método: <b>1)</b> escribe Ω, <b>2)</b> marca los favorables, <b>3)</b> divide.</li></ul>`,
+ ex:[
+ {n:19,q:`<p>Se lanza un dado de 6 caras al aire. ¿Cuál es la probabilidad de obtener un número impar y menor que 5?</p>`,
+  v:[[779,"este mismo ejercicio (min 12:59)"]],same:true,
+  hint:`Primero los impares, y de esos, los que son menores que 5. Ojo: el 5 no es menor que 5.`,
+  sol:`${steps([`Ω = {1, 2, 3, 4, 5, 6} → 6 casos totales.`,`Impares: 1, 3, 5.`,`De esos, menores que 5: 1 y 3. El 5 <b>no</b> sirve porque es igual, no menor.`,`Favorables: 2.`])}
+   <div class="ans">P = ${F('[[2/6]] = [[1/3]]')}</div>`},
+ {n:20,q:`<p>En una tómbola se tienen bolitas numeradas del 1 al 15 y se saca una al azar. ¿Cuál es la probabilidad de obtener un número impar mayor que 6 y menor que 12?</p>`,
+  v:[[907,"este mismo ejercicio (min 15:07)"]],same:true,
+  hint:`Escribe del 1 al 15, marca los impares mayores que 6 y después tacha los que no son menores que 12.`,
+  sol:`${steps([`Casos totales: 15.`,`Impares mayores que 6: 7, 9, 11, 13, 15.`,`De esos, menores que 12: <b>7, 9, 11</b>. El 13 y el 15 se pasan.`,`Favorables: 3.`])}
+   <div class="ans">P = ${F('[[3/15]] = [[1/5]]')}</div>`},
+ {n:21,q:`<p>Cada letra de la palabra <b>MATEMATICA</b> se escribe en una tarjeta (10 tarjetas) y se extrae una al azar. Calcula la probabilidad de obtener:</p><ol type="a"><li>una vocal.</li><li>la letra M.</li><li>la letra T.</li></ol>`,
+  hint:`Cuenta letra por letra: M-A-T-E-M-A-T-I-C-A. Algunas letras se repiten.`,
+  sol:`<p>Las 10 tarjetas: <b>M A T E M A T I C A</b></p>
+   ${steps([`<b>Vocales</b>: A, E, A, I, A → 5 tarjetas.`,`<b>M</b>: aparece 2 veces.`,`<b>T</b>: aparece 2 veces.`])}
+   <div class="ans">a) ${F('[[5/10]] = [[1/2]]')} &nbsp; b) ${F('[[2/10]] = [[1/5]]')} &nbsp; c) ${F('[[2/10]] = [[1/5]]')}</div>`},
+ {n:22,q:`<p>En una urna hay 4 bolitas rojas, 6 verdes y 2 blancas. Se extrae una al azar. Calcula la probabilidad de que sea:</p><ol type="a"><li>verde.</li><li>blanca.</li><li>no blanca.</li></ol>`,
+  v:[[1184,"Parecido: 'no sea verde' (min 19:44)"]],
+  hint:`Primero suma el total de bolitas. "No blanca" = todas las que no son blancas.`,
+  sol:`${steps([`Total: 4 + 6 + 2 = <b>12</b> bolitas.`,`Verdes: 6 → 6/12.`,`Blancas: 2 → 2/12.`,`No blancas: rojas + verdes = 4 + 6 = 10 → 10/12. Otra forma: 1 − P(blanca) = 1 − 1/6 = 5/6.`])}
+   <div class="ans">a) ${F('[[6/12]] = [[1/2]]')} &nbsp; b) ${F('[[2/12]] = [[1/6]]')} &nbsp; c) ${F('[[10/12]] = [[5/6]]')}</div>`},
+ {n:23,q:`<p>En una tómbola hay bolitas numeradas del 1 al 20 y se extrae una al azar. ¿Cuál es la probabilidad de obtener un múltiplo de 5? ¿Y un número mayor que 14?</p>`,
+  hint:`Múltiplos de 5 hasta el 20. Mayor que 14 significa desde el 15 en adelante.`,
+  sol:`${steps([`Casos totales: 20.`,`Múltiplos de 5: 5, 10, 15, 20 → 4.`,`Mayores que 14: 15, 16, 17, 18, 19, 20 → 6.`])}
+   <div class="ans">Múltiplo de 5: ${F('[[4/20]] = [[1/5]]')} &nbsp;·&nbsp; Mayor que 14: ${F('[[6/20]] = [[3/10]]')}</div>`},
+ {n:24,q:`<p>Se lanza un dado de 6 caras. ¿Cuál es la probabilidad de obtener un número par y mayor que 2? Escribe primero los casos favorables.</p>`,
+  v:[[779,"Mismo tipo que el 19 (min 12:59)"]],
+  hint:`Pares del dado: 2, 4, 6. ¿Cuáles son mayores que 2?`,
+  sol:`${steps([`Pares: 2, 4, 6.`,`Mayores que 2: 4 y 6. El 2 no sirve porque no es mayor que sí mismo.`,`Casos favorables: {4, 6} → 2 de 6.`])}
+   <div class="ans">P = ${F('[[2/6]] = [[1/3]]')}</div>`}
+ ]},
+{id:"u5",title:"V. Eventos independientes y dependientes",
+ theory:`<h4>Lo que tienes que saber</h4>
+ <ul><li><b>Independientes</b>: lo que pasa en uno <b>no cambia</b> la probabilidad del otro (dos monedas, moneda y dado, sacar <b>con reposición</b>).</li>
+ <li><b>Dependientes</b>: lo primero <b>sí cambia</b> lo segundo, porque cambia lo que queda (sacar <b>sin reposición</b>).</li>
+ <li><b>Regla multiplicativa</b>: para que pase A <b>y luego</b> B, se multiplica: P(A y B) = P(A) · P(B).<br>Si es sin reposición, en la segunda fracción <b>resta 1 al total</b>, y también a los favorables si sacaste uno de esos.</li></ul>`,
+ ex:[
+ {n:25,q:`<p>Se lanzan 2 monedas al aire. ¿Cuál es la probabilidad de que en la primera moneda salga sello y en la segunda salga cara?</p>`,
+  v:[[837,"este mismo ejercicio (min 13:57)"]],same:true,
+  hint:`Ω = {CC, CS, SC, SS}. ¿Cuál tiene S primero y C segundo?`,
+  sol:`${steps([`Ω = {CC, CS, SC, SS} → 4 casos.`,`Que la primera sea S y la segunda C: solo <b>SC</b>.`,`Con la regla multiplicativa: P(S) · P(C) = ${F('[[1/2]] · [[1/2]] = [[1/4]]')}.`])}
+   <div class="ans">P = ${F('[[1/4]]')}</div>`},
+ {n:26,q:`<p>Se lanzan una moneda y un dado de 6 caras. ¿Cuál es la probabilidad de obtener cara en la moneda y un número par en el dado? ¿Son eventos dependientes o independientes?</p>`,
+  hint:`La moneda no le "avisa" nada al dado. Multiplica P(cara) · P(par).`,
+  sol:`${steps([`P(cara) = ${F('[[1/2]]')}.`,`P(par) = pares {2, 4, 6} de 6 = ${F('[[3/6]] = [[1/2]]')}.`,`Multiplico: ${F('[[1/2]] · [[1/2]] = [[1/4]]')}.`,`Comprobación con Ω: hay 2 × 6 = 12 casos, y los favorables son (C,2), (C,4), (C,6) → ${F('[[3/12]] = [[1/4]]')} ✓`])}
+   <div class="ans">P = ${F('[[1/4]]')}. Son <b>independientes</b>: lo que sale en la moneda no afecta al dado.</div>`},
+ {n:27,q:`<p>Se lanzan dos dados de 6 caras. ¿Cuál es la probabilidad de que en ambos dados salga un 6?</p>`,
+  hint:`P(6 en el primero) · P(6 en el segundo).`,
+  sol:`${steps([`P(6 en el dado 1) = ${F('[[1/6]]')}.`,`P(6 en el dado 2) = ${F('[[1/6]]')}. Son independientes.`,`Multiplico: ${F('[[1/6]] · [[1/6]] = [[1/36]]')}. En la tabla de 36 casillas, solo una es (6,6).`])}
+   <div class="ans">P = ${F('[[1/36]]')}</div>`},
+ {n:28,q:`<p>Se gira una ruleta dividida en 4 sectores iguales (rojo, azul, verde y amarillo) y se lanza una moneda. ¿Cuál es la probabilidad de obtener rojo y sello?</p>`,
+  hint:`P(rojo) · P(sello).`,
+  sol:`${steps([`P(rojo) = ${F('[[1/4]]')} (1 de 4 sectores).`,`P(sello) = ${F('[[1/2]]')}.`,`Multiplico: ${F('[[1/4]] · [[1/2]] = [[1/8]]')}. Ω tiene 4 × 2 = 8 casos y solo (rojo, S) sirve.`])}
+   <div class="ans">P = ${F('[[1/8]]')}</div>`},
+ {n:29,q:`<p>En una bolsa hay 4 bolitas rojas y 2 azules. Se extraen dos bolitas, una tras otra y <b>sin reposición</b>. ¿Cuál es la probabilidad de que ambas sean azules?</p>`,
+  hint:`Después de sacar la primera azul, ¿cuántas bolitas quedan y cuántas son azules?`,
+  sol:`${steps([`Total: 6 bolitas. P(1ª azul) = ${F('[[2/6]]')}.`,`No se devuelve, así que quedan <b>5</b> bolitas y solo <b>1</b> azul. P(2ª azul) = ${F('[[1/5]]')}.`,`Multiplico: ${F('[[2/6]] · [[1/5]] = [[2/30]] = [[1/15]]')}.`])}
+   <div class="ans">P = ${F('[[1/15]]')} (dependientes)</div>`},
+ {n:30,q:`<p>Con la misma bolsa del ejercicio anterior (4 rojas y 2 azules), ahora se extraen dos bolitas <b>con reposición</b>. ¿Cuál es la probabilidad de que ambas sean azules? Compara con el resultado anterior y explica por qué cambia.</p>`,
+  hint:`Con reposición, la bolsa vuelve a quedar igual para la segunda extracción.`,
+  sol:`${steps([`P(1ª azul) = ${F('[[2/6]]')}.`,`Se devuelve, así que la bolsa sigue con 6 bolitas y 2 azules. P(2ª azul) = ${F('[[2/6]]')}.`,`Multiplico: ${F('[[2/6]] · [[2/6]] = [[4/36]] = [[1/9]]')}.`,`Comparo: ${F('[[1/9]]')} ≈ 0,11 es <b>mayor</b> que ${F('[[1/15]]')} ≈ 0,07.`])}
+   <div class="ans">P = ${F('[[1/9]]')}. Es mayor porque al devolver la bolita azul vuelve a haber 2 azules para la segunda extracción. Sin reposición quedaba solo 1.</div>`},
+ {n:31,q:`<p>En un curso de 12 estudiantes hay 5 mujeres y 7 hombres. Se elige al azar un presidente y luego, entre los restantes, un tesorero. ¿Cuál es la probabilidad de que ambos sean hombres?</p>`,
+  hint:`Es como sacar sin reposición: el presidente ya no puede ser tesorero.`,
+  sol:`${steps([`P(presidente hombre) = ${F('[[7/12]]')}.`,`Quedan 11 estudiantes, de los cuales 6 son hombres. P(tesorero hombre) = ${F('[[6/11]]')}.`,`Multiplico: ${F('[[7/12]] · [[6/11]] = [[42/132]] = [[7/22]]')} (dividí arriba y abajo por 6).`])}
+   <div class="ans">P = ${F('[[7/22]]')}</div>`},
+ {n:32,q:`<p>De un naipe inglés de 52 cartas se extraen dos cartas, una tras otra y sin reposición.</p><ol type="a"><li>¿Los eventos son dependientes o independientes? Justifica.</li><li>¿Cuál es la probabilidad de que ambas sean corazones?</li></ol>`,
+  hint:`El naipe inglés tiene 4 pintas de 13 cartas: 13 corazones. Sin reposición, para la segunda carta queda una menos.`,
+  sol:`<h5>a)</h5><p><b>Dependientes</b>: la primera carta no se devuelve, así que cambia lo que queda en el naipe y cambia la probabilidad de la segunda.</p>
+   <h5>b)</h5>${steps([`P(1ª corazón) = ${F('[[13/52]] = [[1/4]]')}.`,`Quedan 51 cartas y 12 corazones. P(2ª corazón) = ${F('[[12/51]] = [[4/17]]')}.`,`Multiplico: ${F('[[1/4]] · [[4/17]] = [[4/68]] = [[1/17]]')}.`])}
+   <div class="ans">a) Dependientes. b) P = ${F('[[1/17]]')}</div>`}
+ ]},
+{id:"u6",title:"VI. Regla aditiva y combinación de reglas",
+ theory:`<h4>Lo que tienes que saber</h4>
+ <p>Cuando dice "<b>A o B</b>", se suman las probabilidades, pero hay que fijarse si hay casos que <b>se repiten</b>:</p>
+ <p style="text-align:center;font-size:17px"><b>P(A o B) = P(A) + P(B) − P(A y B)</b></p>
+ <ul><li>Si no pueden pasar a la vez (<b>mutuamente excluyentes</b>), P(A y B) = 0 y solo se suma.</li>
+ <li>Si comparten casos (la <b>intersección</b>), se resta lo que se contó dos veces. Es la "trampa" del As de corazones que explica el profe.</li></ul>`,
+ ex:[
+ {n:33,q:`<p>Se lanzan dos dados de 6 caras. ¿Cuál es la probabilidad de que la suma de sus caras superiores sea un número impar o múltiplo de 6?</p>`,
+  v:[[973,"este mismo ejercicio (min 16:13)"]],same:true,
+  hint:`Haz la tabla de sumas de 6×6. Cuenta las sumas impares y después las que son 6 o 12. ¿Hay alguna que sea las dos cosas a la vez?`,
+  sol:`<p>Tabla de sumas. En <span style="background:#ffe08a;padding:0 4px">amarillo</span> las impares y en <span style="background:#b9e4ff;padding:0 4px">celeste</span> los múltiplos de 6:</p>${diceTable(v=>v%2===1,'on','sum',v=>v%6===0)}
+   ${steps([`Casos totales: 6 × 6 = 36.`,`Sumas <b>impares</b> (3, 5, 7, 9, 11): hay <b>18</b> casillas amarillas.`,`<b>Múltiplos de 6</b> que pueden salir: 6 y 12. El 6 sale 5 veces y el 12 sale 1 vez → <b>6</b> casillas celestes.`,`¿Alguna es impar y múltiplo de 6 a la vez? No, porque los múltiplos de 6 son pares. No hay nada que restar.`,`Sumo: 18 + 6 = 24.`])}
+   <div class="ans">P = ${F('[[24/36]] = [[2/3]]')}</div>
+   <p class="note">Como dice el profe, los números del borde de la tabla (1 al 6) son los dados, no las sumas, así que no se cuentan.</p>`},
+ {n:34,q:`<p>De un naipe inglés de 52 cartas se extrae una al azar. ¿Cuál es la probabilidad de obtener un Rey o una Reina? ¿Son eventos mutuamente excluyentes?</p>`,
+  hint:`Hay 4 reyes y 4 reinas (uno de cada pinta). ¿Existe una carta que sea rey y reina al mismo tiempo?`,
+  sol:`${steps([`Reyes: 4. Reinas: 4.`,`Ninguna carta es rey y reina a la vez, así que no se repite nada.`,`Sumo: ${F('[[4/52]] + [[4/52]] = [[8/52]] = [[2/13]]')}.`])}
+   <div class="ans">P = ${F('[[2/13]]')}. Sí, son <b>mutuamente excluyentes</b> (no pueden pasar juntos).</div>`},
+ {n:35,q:`<p>De un naipe inglés de 52 cartas se extrae una al azar. ¿Cuál es la probabilidad de obtener un As o una carta de trébol? ¿Por qué hay que restar algo en este caso?</p>`,
+  v:[[1238,"Mismo ejercicio con corazones (min 20:38)"]],same:true,
+  hint:`Hay 4 ases y 13 tréboles. ¿Hay alguna carta que sea as y trébol a la vez?`,
+  sol:`${steps([`Ases: 4 (uno por pinta).`,`Tréboles: 13.`,`Si sumo 4 + 13 = 17, el <b>As de trébol</b> queda contado <b>dos veces</b>: está en los ases y también en los tréboles.`,`Le resto el repetido: 17 − 1 = 16.`])}
+   <div class="ans">P = ${F('[[4/52]] + [[13/52]] − [[1/52]] = [[16/52]] = [[4/13]]')}</div>
+   <div class="trap"><b>¿Por qué se resta?</b> Porque el As de trébol cumple las dos condiciones y no se puede contar dos veces, ya que en el naipe hay uno solo. En el video el profe lo hace igual, pero con corazones.</div>`},
+ {n:36,q:`<p>Se lanza un dado de 6 caras. ¿Cuál es la probabilidad de obtener un número impar o mayor que 4? Identifica la intersección de ambos eventos.</p>`,
+  hint:`Impares: {1,3,5}. Mayores que 4: {5,6}. ¿Cuál está en los dos?`,
+  sol:`${steps([`A = impar = {1, 3, 5} → ${F('[[3/6]]')}.`,`B = mayor que 4 = {5, 6} → ${F('[[2/6]]')}.`,`Intersección A ∩ B (los que están en los dos) = <b>{5}</b> → ${F('[[1/6]]')}.`,`Aplico la regla: ${F('[[3/6]] + [[2/6]] − [[1/6]] = [[4/6]]')}.`,`Comprobación: A o B = {1, 3, 5, 6} → 4 de 6 ✓`])}
+   <div class="ans">P = ${F('[[4/6]] = [[2/3]]')}. La intersección es {5}.</div>`},
+ {n:37,q:`<p>En una tómbola hay bolitas numeradas del 1 al 20 y se saca una al azar. ¿Cuál es la probabilidad de obtener un múltiplo de 3 o un múltiplo de 5?</p>`,
+  hint:`Escribe los múltiplos de 3 y los de 5 hasta el 20. ¿Hay alguno repetido?`,
+  sol:`${steps([`Múltiplos de 3: 3, 6, 9, 12, 15, 18 → 6.`,`Múltiplos de 5: 5, 10, 15, 20 → 4.`,`Repetido: el <b>15</b> (es múltiplo de 3 y de 5) → 1.`,`6 + 4 − 1 = 9 favorables de 20.`])}
+   <div class="ans">P = ${F('[[6/20]] + [[4/20]] − [[1/20]] = [[9/20]]')}</div>`},
+ {n:38,q:`<p>En una urna hay 3 fichas rojas y 2 azules. Se extrae una ficha, se devuelve y se extrae otra. ¿Cuál es la probabilidad de que las dos fichas sean de <b>distinto</b> color?</p>`,
+  hint:`"Distinto color" puede pasar de 2 maneras: roja y luego azul, <b>o</b> azul y luego roja. Calcula cada una con la multiplicativa y después súmalas.`,
+  sol:`${steps([`Total: 5 fichas. Como se devuelve, siempre hay 3 rojas y 2 azules.`,`Roja y luego azul: ${F('[[3/5]] · [[2/5]] = [[6/25]]')}.`,`Azul y luego roja: ${F('[[2/5]] · [[3/5]] = [[6/25]]')}.`,`Son dos caminos distintos que no pasan a la vez, así que se suman: ${F('[[6/25]] + [[6/25]] = [[12/25]]')}.`])}
+   <div class="ans">P = ${F('[[12/25]]')} (regla multiplicativa + regla aditiva)</div>`},
+ {n:39,q:`<p>Se lanzan dos monedas. Usando la regla multiplicativa y la regla aditiva, calcula la probabilidad de obtener <b>exactamente una</b> cara.</p>`,
+  hint:`Exactamente una cara = CS o SC.`,
+  sol:`${steps([`Camino CS: ${F('[[1/2]] · [[1/2]] = [[1/4]]')} (multiplicativa).`,`Camino SC: ${F('[[1/2]] · [[1/2]] = [[1/4]]')} (multiplicativa).`,`Sumo los dos caminos: ${F('[[1/4]] + [[1/4]] = [[2/4]] = [[1/2]]')} (aditiva).`])}
+   <div class="ans">P = ${F('[[1/2]]')}</div>`},
+ {n:40,q:`<p>En un curso de 30 estudiantes, 18 juegan fútbol, 10 juegan básquetbol y 4 practican ambos deportes. Si se elige un estudiante al azar, ¿cuál es la probabilidad de que juegue fútbol o básquetbol?</p>`,
+  hint:`Los 4 que juegan ambos están dentro de los 18 y también dentro de los 10. Si sumas directo, los cuentas dos veces.`,
+  sol:`${steps([`P(fútbol) = ${F('[[18/30]]')}.`,`P(básquetbol) = ${F('[[10/30]]')}.`,`P(ambos) = ${F('[[4/30]]')}, los que se repiten.`,`Aplico la regla aditiva: ${F('[[18/30]] + [[10/30]] − [[4/30]] = [[24/30]]')}.`])}
+   <div class="ans">P = ${F('[[24/30]] = [[4/5]]')}</div>
+   <p class="note">Dicho de otra forma: 14 juegan solo fútbol, 6 solo básquetbol y 4 ambos, en total 24 personas. Las otras 6 no juegan ninguno.</p>`}
+ ]}
+];
+
+/* ---------- Preguntas interactivas de cada ejercicio ----------
+   mc: opciones (o) y la correcta (a = índice). Una opción puede ser [texto, retroalimentación si la eligen].
+   num: respuesta numérica (a). frac: fracción [num, den]; se acepta cualquier fracción equivalente.
+   tr: errores típicos en fracciones/números → mensaje. */
+const P={
+1:[{l:"a) Tipo de correlación",t:"mc",o:["Positiva fuerte",["Negativa fuerte",""],["Negativa débil","Los puntos están muy pegados a la recta: eso es fuerte."],"Nula"],a:1},
+   {l:"b) Interpretación",t:"mc",o:["A más horas de práctica, menos errores","A más horas de práctica, más errores","Las horas de práctica no influyen en los errores"],a:0}],
+2:[{l:"a) Tipo de correlación",t:"mc",o:["Positiva","Negativa","Nula"],a:2},
+   {l:"b) ¿Se puede predecir la nota con la estatura?",t:"mc",o:["Sí, los más altos tienen mejor nota","No, porque no hay relación entre las variables","Sí, los más bajos tienen mejor nota"],a:1}],
+3:[{l:"a) Signo e intensidad",t:"mc",o:["Positiva fuerte",["Positiva débil","Mira lo cerca que están los puntos de la recta."],"Negativa fuerte","Nula"],a:0},
+   {l:"b) 100 m² frente a 50 m²",t:"mc",o:["Costará más (≈13 millones contra ≈7 millones)","Costará menos","Costarán lo mismo"],a:0}],
+4:[{l:"a) Signo e intensidad",t:"mc",o:["Negativa débil",["Negativa fuerte","La recta baja muy poco y hay puntos lejos de ella."],"Positiva débil","Nula"],a:0},
+   {l:"b) ¿Por qué no todo el que juega mucho tiene promedio bajo?",t:"mc",o:["Porque es solo una tendencia débil: hay alumnos que juegan unas 5 horas y tienen 6,4","Porque la correlación es positiva","Porque los videojuegos suben las notas"],a:0}],
+5:[{l:"a) ¿Qué grupo está mayoritariamente sobre la recta?",t:"mc",o:["Los basquetbolistas: más altos y con más masa","Las gimnastas: más altas y con más masa","La mitad de cada grupo"],a:0},
+   {l:"b) ¿Cuántos deportistas quedan en el lado equivocado?",t:"num",a:2,tr:{1:"Hay un triángulo bajo la recta… ¿y algún círculo sobre ella?"}},
+   {l:"c) ¿Todos los basquetbolistas son más altos que todas las gimnastas?",t:"mc",o:["No: una gimnasta de ≈170 cm es más alta que un basquetbolista de ≈166 cm","Sí, siempre"],a:0}],
+6:[{l:"a) Al construir la nube, ¿qué punto corresponde al día de 26 °C?",t:"mc",o:["(26, 85)",["(85, 26)","Primero va x (temperatura) y después y (asistentes)."],"(26, 100)"],a:0},
+   {l:"b) Clasifica la correlación",t:"mc",o:["Positiva fuerte","Negativa fuerte","Positiva débil","Nula"],a:0}],
+7:[{l:"a) El espacio muestral Ω",t:"mc",o:["{(C,1), (C,2), (C,3), (C,4), (S,1), (S,2), (S,3), (S,4)}",["{C, S, 1, 2, 3, 4}","Cada resultado es un par (moneda, dado), no un elemento suelto."],"{(C,1), (S,2), (C,3), (S,4)}"],a:0},
+   {l:"b) #Ω =",t:"num",a:8,tr:{6:"Sumaste 2 + 4. Aquí se multiplica.",4:"Cuenta las dos ramas de la moneda."}}],
+8:[{l:"Ω al lanzar dos monedas",t:"mc",o:["{CC, CS, SC, SS}",["{CC, CS, SS}","CS y SC son distintos: importa cuál moneda salió primero."],"{C, S}"],a:0},
+   {l:"#Ω =",t:"num",a:4,tr:{3:"Te falta uno: CS y SC se cuentan por separado."}}],
+9:[{l:"a) Ω sin reposición",t:"mc",o:["{AB, AC, BA, BC, CA, CB}",["{AB, AC, BC}","BA no es lo mismo que AB: el orden forma otra palabra."],["{AA, AB, AC, BA, BB, BC, CA, CB, CC}","Sin reposición no se puede repetir la letra."]],a:0},
+   {l:"b) #Ω sin reposición =",t:"num",a:6},
+   {l:"b) Y si fuera con reposición, #Ω =",t:"num",a:9,tr:{6:"Con reposición se agregan AA, BB y CC."}}],
+10:[{l:"a) Ω con máximo 2 lanzamientos",t:"mc",o:["{S, CS, CC}",["{CC, CS, SC, SS}","Si sale S en el primero, el experimento se detiene."],["{S, CS}","¿Y si salen dos caras seguidas? También es un resultado."]],a:0},
+    {l:"b) Con máximo 4 lanzamientos, ¿cuántos elementos tiene Ω?",t:"num",a:5,tr:{4:"No olvides CCCC: se acabaron los lanzamientos sin sello."}}],
+11:[{l:"#Ω =",t:"num",a:24,tr:{10:"Sumaste 6 + 4. Usa el principio multiplicativo."}}],
+12:[{l:"a) Espacio muestral",t:"mc",o:["{(Po,F), (Po,J), (Pe,F), (Pe,J), (L,F), (L,J)}",["{Po, Pe, L, F, J}","Cada elemento es una pareja fondo + postre."],"{(Po,F), (Pe,J), (L,F)}"],a:0},
+    {l:"b) ¿Cuántas combinaciones hay?",t:"num",a:6,tr:{5:"3 + 2 no: es 3 × 2."}}],
+13:[{l:"a) A: exactamente una cara",t:"mc",o:["{CS, SC}",["{CS, SC, CC}","CC tiene dos caras, no una."],"{CC}"],a:0},
+    {l:"b) B: no obtener sellos",t:"mc",o:["{CC}","{SS}","{CS, SC}"],a:0},
+    {l:"c) D: al menos un sello",t:"mc",o:["{CS, SC, SS}",["{SS}","\"Al menos uno\" incluye tener uno solo."],"{CS, SC}"],a:0}],
+14:[{l:"Elementos de E (suma 7)",t:"mc",o:["{(1,6), (2,5), (3,4), (4,3), (5,2), (6,1)}",["{(1,6), (2,5), (3,4)}","(6,1) también suma 7 y es otro resultado."],"{(3,4), (4,3)}"],a:0},
+    {l:"#E =",t:"num",a:6,tr:{3:"Cuenta también los pares dados vuelta."}}],
+15:[{l:"Elementos de F (producto 6)",t:"mc",o:["{(1,6), (2,3), (3,2), (6,1)}",["{(1,6), (2,3)}","Faltan (3,2) y (6,1)."],["{(1,5), (2,4), (3,3), (4,2), (5,1)}","Eso es suma 6. Producto es multiplicar."]],a:0},
+    {l:"¿Por qué (1,6) y (6,1) se cuentan por separado?",t:"mc",o:["Porque son dos dados distintos: en uno el primer dado muestra 1 y en el otro muestra 6","Porque su producto es distinto","No se cuentan por separado"],a:0}],
+16:[{l:"a) P: número primo",t:"mc",o:["{2, 3, 5}",["{1, 2, 3, 5}","El 1 no es primo: tiene un solo divisor."],["{1, 3, 5}","Esos son los impares. El 2 es primo y el 1 no."],"{2, 4, 6}"],a:0},
+    {l:"b) Complemento Pᶜ",t:"mc",o:["{1, 4, 6}",["{4, 6}","¿Y el 1? No es primo, así que va en el complemento."],"{1, 3, 5}"],a:0}],
+17:[{l:"a) Obtener un 7 con un dado",t:"mc",o:["Seguro","Imposible","Aleatorio"],a:1},
+    {l:"b) Obtener un número menor que 7",t:"mc",o:["Seguro","Imposible","Aleatorio"],a:0},
+    {l:"c) Obtener cara con una moneda",t:"mc",o:["Seguro","Imposible","Aleatorio"],a:2},
+    {l:"d) Bolita verde de una bolsa solo con rojas",t:"mc",o:["Seguro","Imposible","Aleatorio"],a:1}],
+18:[{l:"a) G: múltiplo de 4",t:"mc",o:["{4, 8}","{4}",["{2, 4, 6, 8, 10}","Esos son múltiplos de 2."]],a:0},
+    {l:"b) H: múltiplo de 2 y de 3",t:"mc",o:["{6}",["{2, 3, 4, 6, 8, 9, 10}","\"Y\" pide las dos condiciones a la vez, no una u otra."],"{6, 12}"],a:0},
+    {l:"c) K: par mayor que 5",t:"mc",o:["{6, 8, 10}",["{6, 7, 8, 9, 10}","Tiene que ser par."],"{2, 4, 6, 8, 10}"],a:0}],
+19:[{l:"P(impar y menor que 5) =",t:"frac",a:[1,3],tr:{"3/6":"¿Contaste el 5? El 5 no es menor que 5.","1/2":"¿Contaste el 5? El 5 no es menor que 5."}}],
+20:[{l:"P =",t:"frac",a:[1,5],tr:{"5/15":"El 13 y el 15 no son menores que 12.","4/15":"Revisa los impares entre 6 y 12: son 7, 9 y 11."}}],
+21:[{l:"a) P(vocal) =",t:"frac",a:[1,2],tr:{"3/10":"La A aparece 3 veces. Cuenta cada tarjeta, no cada letra distinta."}},
+    {l:"b) P(M) =",t:"frac",a:[1,5],tr:{"1/10":"La M aparece 2 veces en MATEMATICA."}},
+    {l:"c) P(T) =",t:"frac",a:[1,5],tr:{"1/10":"La T aparece 2 veces en MATEMATICA."}}],
+22:[{l:"a) P(verde) =",t:"frac",a:[1,2],tr:{"6/10":"El total es 4 + 6 + 2 = 12."}},
+    {l:"b) P(blanca) =",t:"frac",a:[1,6]},
+    {l:"c) P(no blanca) =",t:"frac",a:[5,6]}],
+23:[{l:"P(múltiplo de 5) =",t:"frac",a:[1,5]},
+    {l:"P(mayor que 14) =",t:"frac",a:[3,10],tr:{"7/20":"El 14 no es mayor que 14: parte desde el 15."}}],
+24:[{l:"Casos favorables",t:"mc",o:["{4, 6}",["{2, 4, 6}","El 2 no es mayor que 2."],"{3, 4, 5, 6}"],a:0},
+    {l:"P =",t:"frac",a:[1,3],tr:{"1/2":"El 2 no es mayor que 2."}}],
+25:[{l:"P(sello y luego cara) =",t:"frac",a:[1,4],tr:{"1/2":"Eso sería CS o SC. Aquí el orden importa: solo SC."}}],
+26:[{l:"P(cara y par) =",t:"frac",a:[1,4]},
+    {l:"¿Dependientes o independientes?",t:"mc",o:["Independientes","Dependientes"],a:0}],
+27:[{l:"P(6 y 6) =",t:"frac",a:[1,36],tr:{"2/6":"No se suma: es 1/6 · 1/6.","1/3":"No se suma: es 1/6 · 1/6.","1/12":"Multiplica los denominadores: 6 · 6."}}],
+28:[{l:"P(rojo y sello) =",t:"frac",a:[1,8],tr:{"3/4":"No se suma: se multiplica 1/4 · 1/2."}}],
+29:[{l:"P(ambas azules) =",t:"frac",a:[1,15],tr:{"1/9":"Eso es con reposición. Sin reposición, después quedan 5 bolitas y 1 azul.","4/36":"Eso es con reposición. Sin reposición, después quedan 5 bolitas y 1 azul."}}],
+30:[{l:"P(ambas azules, con reposición) =",t:"frac",a:[1,9],tr:{"1/15":"Ahora la bolita vuelve a la bolsa: la segunda vez sigue siendo 2/6."}},
+    {l:"Comparada con la del ejercicio 29 (1/15)…",t:"mc",o:["Es mayor, porque al devolverla vuelve a haber 2 azules","Es menor","Es igual"],a:0}],
+31:[{l:"P(ambos hombres) =",t:"frac",a:[7,22],tr:{"49/144":"El presidente no puede ser tesorero: quedan 11 y solo 6 hombres."}}],
+32:[{l:"a) ¿Dependientes o independientes?",t:"mc",o:["Dependientes: la primera carta no se devuelve","Independientes: cada carta es distinta"],a:0},
+    {l:"b) P(ambas corazones) =",t:"frac",a:[1,17],tr:{"1/16":"Eso sería con reposición. La segunda vez hay 51 cartas y 12 corazones."}}],
+33:[{l:"P(suma impar o múltiplo de 6) =",t:"frac",a:[2,3],tr:{"1/2":"Faltan los múltiplos de 6 (sumas 6 y 12).","23/36":"El 12 sale una vez (6,6) y el 6 sale 5 veces."}}],
+34:[{l:"P(Rey o Reina) =",t:"frac",a:[2,13]},
+    {l:"¿Son mutuamente excluyentes?",t:"mc",o:["Sí, ninguna carta es rey y reina a la vez","No, hay cartas que son las dos cosas"],a:0}],
+35:[{l:"P(As o trébol) =",t:"frac",a:[4,13],tr:{"17/52":"El As de trébol quedó contado dos veces. Réstalo."}},
+    {l:"¿Por qué hay que restar algo?",t:"mc",o:["Porque el As de trébol se contaría dos veces","Porque hay que sacar los reyes","No hay que restar nada"],a:0}],
+36:[{l:"Intersección (impar y mayor que 4)",t:"mc",o:["{5}","{5, 6}",["{1, 3, 5, 6}","Esa es la unión (\"o\"). La intersección es lo que está en los dos."],"∅ (vacío)"],a:0},
+    {l:"P(impar o mayor que 4) =",t:"frac",a:[2,3],tr:{"5/6":"El 5 está en los dos eventos: réstalo una vez."}}],
+37:[{l:"P(múltiplo de 3 o de 5) =",t:"frac",a:[9,20],tr:{"10/20":"El 15 es múltiplo de 3 y de 5: lo contaste dos veces.","1/2":"El 15 es múltiplo de 3 y de 5: lo contaste dos veces."}}],
+38:[{l:"P(distinto color) =",t:"frac",a:[12,25],tr:{"6/25":"Ese es solo un camino (roja y luego azul). También puede ser azul y luego roja."}}],
+39:[{l:"P(exactamente una cara) =",t:"frac",a:[1,2],tr:{"1/4":"Ese es un solo camino. Suma CS y SC."}}],
+40:[{l:"P(fútbol o básquetbol) =",t:"frac",a:[4,5],tr:{"28/30":"Los 4 que juegan ambos quedaron contados dos veces.","14/15":"Los 4 que juegan ambos quedaron contados dos veces."}}]
+};
+
+/* ================= JUEGO ================= */
+const ZONES=[
+ {short:"Nube de puntos",c:"var(--z1)"},{short:"Espacio muestral",c:"var(--z2)"},{short:"Eventos",c:"var(--z3)"},
+ {short:"Regla de Laplace",c:"var(--z4)"},{short:"Independientes y dependientes",c:"var(--z5)"},{short:"Regla aditiva",c:"var(--z6)"}];
+const ALL=[];units.forEach((u,ui)=>u.ex.forEach(e=>ALL.push(Object.assign({ui},e))));
+const byN=n=>ALL.find(e=>e.n===n);
+const RANKS=[[0,"Aprendiz del Azar"],[12,"Lanzador de Dados"],[30,"Contador de Casos"],[55,"Domador de Ω"],[80,"Maestro de Laplace"],[105,"Leyenda de la Probabilidad"],[120,"Leyenda perfecta"]];
+const OK_MSG=["¡Bacán!","¡Seco!","¡Impecable!","¡Eso es!","¡Vas volando!","¡Le achuntaste… pero con cálculo!","¡Probabilidad de que seas crack: 1!"];
+const BAD_MSG=["Casi. Revisa con calma.","Uy, no. Mira la pista 💡","No todavía. Tú puedes.","Ese no es. Intenta de nuevo."];
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const $=s=>document.querySelector(s);
+const app=$("#app");
+
+let ST={best:{},stars:{},sound:true,streak:0,bestStreak:0};
+try{const s=JSON.parse(localStorage.getItem("tablero-azar")||"null");if(s)ST=Object.assign(ST,s)}catch(e){}
+const save=()=>{try{localStorage.setItem("tablero-azar",JSON.stringify(ST))}catch(e){}};
+const totalStars=()=>Object.values(ST.stars).reduce((a,b)=>a+b,0);
+const totalPts=()=>Object.values(ST.best).reduce((a,b)=>a+b,0);
+const rankOf=s=>{let r=RANKS[0],nx=null;for(let i=0;i<RANKS.length;i++){if(s>=RANKS[i][0]){r=RANKS[i];nx=RANKS[i+1]||null}}return{r,nx}};
+const nextN=()=>{const e=ALL.find(e=>!ST.stars[e.n]);return e?e.n:null};
+const zoneDone=ui=>units[ui].ex.every(e=>ST.stars[e.n]);
+
+/* ---------- sonido (solo después de un toque) ---------- */
+let AC=null;
+function beep(kind){
+  if(!ST.sound)return;
+  try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+  const seq={ok:[[660,.08],[880,.12]],bad:[[220,.18]],win:[[523,.1],[659,.1],[784,.1],[1047,.22]],roll:[[300,.03],[360,.03],[420,.03],[480,.05]],hint:[[520,.08]]}[kind]||[];
+  let t=AC.currentTime;
+  seq.forEach(([f,d])=>{const o=AC.createOscillator(),g=AC.createGain();o.type=kind==="bad"?"sawtooth":"triangle";o.frequency.value=f;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.18,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d+.02);t+=d;});
+  }catch(e){}
+}
+
+/* ---------- confeti ---------- */
+const cv=$("#fx"),cx=cv.getContext("2d");let parts=[],raf=null;
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+function confetti(n=90){
+  if(reduce)return;
+  cv.width=innerWidth*devicePixelRatio;cv.height=innerHeight*devicePixelRatio;cv.style.width=innerWidth+"px";cv.style.height=innerHeight+"px";
+  const cols=["#2f6fd6","#8a4fd8","#e2771b","#11968f","#d93b78","#4f8a1f","#ff5a3c","#ffd23c"];
+  for(let i=0;i<n;i++)parts.push({x:innerWidth/2,y:innerHeight*.35,vx:(Math.random()-.5)*12,vy:-Math.random()*11-3,r:Math.random()*6+4,c:pick(cols),a:Math.random()*6,va:(Math.random()-.5)*.4,life:120});
+  if(!raf)tick();
+}
+function tick(){
+  cx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);cx.clearRect(0,0,innerWidth,innerHeight);
+  parts.forEach(p=>{p.vy+=.32;p.vx*=.99;p.x+=p.vx;p.y+=p.vy;p.a+=p.va;p.life--;cx.save();cx.translate(p.x,p.y);cx.rotate(p.a);cx.fillStyle=p.c;cx.fillRect(-p.r/2,-p.r/3,p.r,p.r*.66);cx.restore()});
+  parts=parts.filter(p=>p.life>0&&p.y<innerHeight+20);
+  raf=parts.length?requestAnimationFrame(tick):(cx.clearRect(0,0,innerWidth,innerHeight),null);
+}
+function toast(t){const d=document.createElement("div");d.className="toast";d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),1800)}
+
+/* ---------- dado dibujado ---------- */
+const PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+const dieHTML=(v,cls="")=>`<div class="die ${cls}" aria-label="dado ${v}">${[...Array(9)].map((_,i)=>`<i class="${PIPS[v].includes(i)?"on":""}"></i>`).join("")}</div>`;
+
+/* ---------- PORTADA / TABLERO ---------- */
+function home(){
+  const ts=totalStars(),{r,nx}=rankOf(ts),nn=nextN();
+  const pct=nx?Math.round((ts-r[0])/(nx[0]-r[0])*100):100;
+  let h=`<div class="top"><span class="sp"></span><button class="iconbtn" id="snd" aria-label="Sonido">${ST.sound?"🔊":"🔇"}</button></div>
+  <section class="hero">
+    <div class="dice-row">${dieHTML(3,"red")}${dieHTML(5)}</div>
+    <h1 class="logo">Tablero<br>del <span>Azar</span></h1>
+    <p class="sub">I° Medio · Unidad IV · Nube de puntos y probabilidad. Los 40 ejercicios de la guía del profe Andrés Pizarro, convertidos en casillas. Resuelve, gana estrellas y sube de rango.</p>
+  </section>
+  <div class="stats">
+    <div class="stat"><b>${ts}</b><small>de 120 ⭐</small></div>
+    <div class="stat"><b>${totalPts().toLocaleString("es-CL")}</b><small>puntos</small></div>
+    <div class="stat"><b>${Object.keys(ST.stars).length}/40</b><small>casillas</small></div>
+  </div>
+  <div class="rank"><div style="min-width:0"><div class="lbl">🎖️ ${r[1]}</div><small>${nx?`${nx[0]-ts} ⭐ para “${nx[1]}”`:"Rango máximo"}</small></div><div class="bar"><i style="width:${pct}%"></i></div></div>
+  ${nn?`<button class="big" data-intro data-go="${nn}">${Object.keys(ST.stars).length?"Seguir en la casilla "+nn:"¡Empezar a jugar!"} →</button>`:`<button class="big" data-go="1">Volver a jugar (mejora tus ⭐)</button>`}
+  <div class="card" style="font-size:15px"><b>Cómo se juega.</b> Cada casilla es un ejercicio de la guía. Primero hazlo en tu cuaderno, igual que en la prueba, y después responde aquí. Acertar al primer intento da <b>100 puntos</b>. La 💡 pista resta 30 y cada error resta 40. Si aciertas varias seguidas se activa la racha 🔥. Al terminar una casilla lanzas el dado de bonus y puedes ver la solución paso a paso.</div>`;
+  units.forEach((u,ui)=>{
+    const z=ZONES[ui],got=u.ex.reduce((a,e)=>a+(ST.stars[e.n]||0),0);
+    h+=`<section class="zone" style="--zc:${z.c}">
+      <div class="zone-h"><div class="badge">${["I","II","III","IV","V","VI"][ui]}</div><h2>${z.short}</h2><span class="zs">${got}/${u.ex.length*3} ⭐</span></div>
+      <div class="tiles">${u.ex.map(e=>{const s=ST.stars[e.n]||0;return`<button class="tile ${s?"done":""} ${e.n===nn?"next":""}" data-go="${e.n}" aria-label="Ejercicio ${e.n}">${e.n}<small>${s?"★".repeat(s)+"☆".repeat(3-s):"···"}</small>${e.same?'<span class="tag-video" title="Igual a la prueba">🎯</span>':""}</button>`}).join("")}</div>
+      <button class="zbtn" data-brief="${ui}">📖 Repasar la materia de esta zona</button>
+    </section>`;
+  });
+  h+=`<div class="foot"><span>🎯 = ejercicio igual a una pregunta del control. Tu avance se guarda en este teléfono.</span><button class="linkbtn" id="reset">Borrar mi avance</button></div>`;
+  app.innerHTML=h;scrollTo(0,0);
+}
+
+/* ---------- REPASO DE MATERIA ---------- */
+function brief(ui,thenN){
+  const z=ZONES[ui];
+  app.innerHTML=`<div class="top"><button class="iconbtn" data-home aria-label="Volver al tablero">←</button><span class="chip">Zona ${["I","II","III","IV","V","VI"][ui]}</span><span class="sp"></span></div>
+  <div class="card brief" style="--zc:${z.c}"><h2 style="font-size:22px;margin-bottom:12px;color:var(--zc)">${units[ui].title}</h2>${units[ui].theory}</div>
+  <button class="big" data-go="${thenN||units[ui].ex[0].n}">¡Listo, a jugar! →</button>`;
+  scrollTo(0,0);
+}
+
+/* ---------- CASILLA (EJERCICIO) ---------- */
+let G=null;
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function play(n){
+  const e=byN(n),z=ZONES[e.ui],ps=P[n];
+  G={n,e,pi:0,hint:false,wrongTot:0,tries:0,pts:0,parts:ps.map(p=>p.t==="mc"?Object.assign({},p,{opts:shuffle(p.o.map((o,i)=>({txt:Array.isArray(o)?o[0]:o,fb:Array.isArray(o)?o[1]:"",ok:i===p.a})))}):p)};
+  const tags=(e.v||[]).map(([t,l])=>`<a class="tag v" href="${VID}${t}s" target="_blank" rel="noopener">▶ Video del profe · ${l}</a>`).join("")+(e.same?`<span class="tag s">🎯 Igual a la pregunta del control</span>`:"");
+  app.innerHTML=`<div class="top"><button class="iconbtn" data-home aria-label="Volver al tablero">←</button><span class="chip">⭐ ${totalStars()}</span><span class="chip fire" id="streak" ${ST.streak>=2?"":"hidden"}>🔥 ${ST.streak}</span><span class="sp"></span><span class="chip" id="pts">+0</span></div>
+  <article class="card" style="--zc:${z.c}" id="excard">
+    <div class="ex-title"><div class="ex-num">${n}</div><div><div class="zn">${z.short}</div><div class="st">Casilla ${n} de 40 · ${ps.length} ${ps.length>1?"preguntas":"pregunta"}</div></div></div>
+    <div class="q">${F(e.q)}</div>${tags?`<div class="tags">${tags}</div>`:""}
+    <div id="parts"></div>
+  </article>
+  <div class="toolbar"><button class="tbtn" id="bHint">💡 Pista (−30)</button><button class="tbtn" data-brief="${e.ui}" data-then="${n}">📖 Materia</button></div>
+  <div id="hintbox"></div><div id="win"></div>`;
+  renderParts();scrollTo(0,0);
+}
+function partHTML(p,i){
+  const lab=`<div class="pl"><em>${i+1}/${G.parts.length}</em>${p.l}</div>`;
+  if(p.t==="mc")return lab+`<div class="opts">${p.opts.map((o,k)=>`<button class="opt" data-opt="${k}">${o.txt}</button>`).join("")}</div>`;
+  if(p.t==="num")return lab+`<div class="inrow"><input class="num solo" id="in-${G.n}-${i}" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Respuesta"><button class="check" data-check>Comprobar</button></div>`;
+  return lab+`<div class="inrow"><div class="frin"><input class="num" id="nu-${G.n}-${i}" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Numerador"><hr><input class="num" id="de-${G.n}-${i}" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Denominador"></div><button class="check" data-check>Comprobar</button><span class="ptag">Puedes escribirla simplificada o no.</span></div>`;
+}
+function renderParts(){
+  const box=$("#parts");
+  box.innerHTML=G.parts.map((p,i)=>`<div class="part ${i>G.pi?"locked":""}" id="pt${i}">${i<G.pi?doneHTML(p,i):i===G.pi?partHTML(p,i):`<div class="pl"><em>${i+1}/${G.parts.length}</em>${p.l}</div>`}<div class="fbz"></div></div>`).join("");
+}
+const ansText=p=>p.t==="mc"?p.opts.find(o=>o.ok).txt:p.t==="num"?String(p.a):`${F(`[[${p.a[0]}/${p.a[1]}]]`)}`;
+function doneHTML(p,i){return`<div class="pl"><em>${i+1}/${G.parts.length}</em>${p.l}</div><div class="fb ok"><span class="bot">✅</span><div>${ansText(p)}</div></div>`}
+const gcd=(a,b)=>b?gcd(b,a%b):a;
+
+function feedback(ok,msg,reveal){
+  const z=$(`#pt${G.pi} .fbz`);
+  z.innerHTML=`<div class="fb ${reveal?"reveal":ok?"ok":"bad"}"><span class="bot">${reveal?"🤖":ok?"🎉":"🤔"}</span><div>${msg}</div></div>`;
+}
+function setPts(){$("#pts").textContent="+"+G.pts;const s=$("#streak");s.hidden=ST.streak<2;s.textContent="🔥 "+ST.streak}
+
+function answer(correct,trapMsg){
+  const p=G.parts[G.pi];
+  if(correct){
+    const first=G.tries===0;
+    if(first){ST.streak++;ST.bestStreak=Math.max(ST.bestStreak,ST.streak)}
+    const mult=1+Math.min(Math.max(ST.streak-1,0),5)*.1;
+    const base=Math.max(10,100-(G.hint?30:0)-40*G.tries);
+    const got=Math.round(base*(first?mult:1));
+    G.pts+=got;beep("ok");setPts();
+    feedback(true,`<b>${pick(OK_MSG)}</b> +${got} puntos${first&&mult>1?` (racha 🔥 ×${mult.toFixed(1)})`:""}${trapMsg?"<br>"+trapMsg:""}`);
+    lockCurrent();advance(700);
+  }else{
+    G.tries++;G.wrongTot++;ST.streak=0;setPts();beep("bad");
+    const pt=$(`#pt${G.pi}`);pt.classList.remove("shake");void pt.offsetWidth;pt.classList.add("shake");
+    if(G.tries>=3){
+      feedback(false,`La respuesta correcta es: <b>${ansText(p)}</b>. Revisa la solución paso a paso al final de la casilla.`,true);
+      lockCurrent(true);G.pts+=0;advance(1600);
+    }else{
+      feedback(false,`<b>${trapMsg||pick(BAD_MSG)}</b>${G.tries===2?" Te queda un intento.":""}${!G.hint?" Puedes pedir la 💡 pista.":""}`);
+    }
+  }
+}
+function lockCurrent(showRight){
+  const pt=$(`#pt${G.pi}`);
+  pt.querySelectorAll("button,input").forEach(b=>b.disabled=true);
+  if(showRight)pt.querySelectorAll(".opt").forEach(b=>{if(G.parts[G.pi].opts[+b.dataset.opt].ok)b.classList.add("right")});
+}
+function advance(ms){
+  setTimeout(()=>{
+    G.pi++;G.tries=0;
+    if(G.pi<G.parts.length){renderParts();const el=$(`#pt${G.pi}`);el.scrollIntoView({behavior:reduce?"auto":"smooth",block:"center"});const inp=el.querySelector("input");if(inp)inp.focus({preventScroll:true})}
+    else{renderParts();finish()}
+  },ms);
+}
+function finish(){
+  const np=G.parts.length;
+  const stars=G.wrongTot===0&&!G.hint?3:(G.wrongTot<=1?2:1);
+  G.stars=stars;
+  const prevS=ST.stars[G.n]||0;
+  ST.stars[G.n]=Math.max(prevS,stars);ST.best[G.n]=Math.max(ST.best[G.n]||0,G.pts);save();
+  const e=G.e,z=ZONES[e.ui];
+  $("#win").innerHTML=`<div class="card winbox" style="--zc:${z.c}">
+    <h3>${stars===3?"¡Casilla perfecta!":stars===2?"¡Casilla superada!":"¡Lo lograste!"}</h3>
+    <div class="stars" aria-label="${stars} de 3 estrellas">${[1,2,3].map(i=>`<span class="${i<=stars?"":"off"}">⭐</span>`).join("")}</div>
+    <div><span id="wpts">${G.pts}</span> puntos ${stars<3?`<br><small style="color:var(--muted)">${G.hint?"Usaste pista. ":""}${G.wrongTot?`Tuviste ${G.wrongTot} error${G.wrongTot>1?"es":""}. `:""}Repite la casilla sin pista ni errores para las 3 ⭐.</small>`:""}</div>
+    <div class="bonus" id="bonus"><button class="big alt" id="roll" style="width:auto;padding:13px 20px">🎲 Lanzar dado de bonus</button></div>
+    <details class="sol"><summary>📝 Ver la solución paso a paso</summary>${F(e.sol)}</details>
+    <div id="medal" style="width:100%"></div>
+    <button class="big" id="nextBtn">${G.n<40?`Siguiente casilla (${G.n+1}) →`:"Volver al tablero"}</button>
+  </div>`;
+  beep("win");confetti(stars===3?110:60);
+  $("#win").scrollIntoView({behavior:reduce?"auto":"smooth",block:"start"});
+  if(zoneDone(e.ui)&&!units[e.ui].ex.some(x=>x.n>G.n&&!ST.stars[x.n])){
+    const zs=units[e.ui].ex.reduce((a,x)=>a+(ST.stars[x.n]||0),0);
+    if(units[e.ui].ex[units[e.ui].ex.length-1].n===G.n)$("#medal").innerHTML=`<div class="medal">🏅 ¡Zona “${z.short}” completa! ${zs} de ${units[e.ui].ex.length*3} ⭐</div>`;
+  }
+}
+function rollBonus(){
+  const b=$("#bonus");const v=1+Math.floor(Math.random()*6);
+  let k=0;b.innerHTML=dieHTML(1,"big-die red roll");
+  const iv=setInterval(()=>{k++;beep("roll");b.innerHTML=dieHTML(1+Math.floor(Math.random()*6),"big-die red");if(k>7){clearInterval(iv);done()}},70);
+  function done(){
+    const bonus=v*10;G.pts+=bonus;
+    ST.best[G.n]=Math.max(ST.best[G.n]||0,G.pts);save();
+    b.innerHTML=`${dieHTML(v,"big-die red roll")}<div style="text-align:left"><b>¡Salió ${v}! +${bonus} puntos</b><br><small style="color:var(--muted)">Dato: la probabilidad de que saliera ${v} era ${F("[[1/6]]")}, igual que cualquier otra cara. Regla de Laplace 😉</small></div>`;
+    setPts();const w=$("#wpts");if(w)w.textContent=G.pts;
+  }
+}
+
+/* ---------- eventos ---------- */
+document.addEventListener("click",ev=>{
+  const t=ev.target.closest("button,a");if(!t)return;
+  if(t.dataset.go){const n=+t.dataset.go;const e=byN(n);
+    if(t.hasAttribute("data-intro")&&units[e.ui].ex[0].n===n&&!units[e.ui].ex.some(x=>ST.stars[x.n]))return brief(e.ui,n);
+    return play(n)}
+  if(t.dataset.brief!==undefined)return brief(+t.dataset.brief,t.dataset.then?+t.dataset.then:null);
+  if(t.hasAttribute("data-home"))return home();
+  if(t.id==="snd"){ST.sound=!ST.sound;save();t.textContent=ST.sound?"🔊":"🔇";if(ST.sound)beep("ok");return}
+  if(t.id==="reset"){if(t.dataset.arm){ST={best:{},stars:{},sound:ST.sound,streak:0,bestStreak:0};save();home();toast("Avance borrado")}else{t.dataset.arm=1;t.textContent="Toca otra vez para confirmar";setTimeout(()=>{if(t.isConnected){delete t.dataset.arm;t.textContent="Borrar mi avance"}},3000)}return}
+  if(!G)return;
+  if(t.id==="bHint"){
+    if(!G.hint){G.hint=true;beep("hint")}
+    $("#hintbox").innerHTML=`<div class="hintbox">💡 ${G.e.hint}</div>`;t.disabled=true;t.textContent="💡 Pista usada";
+    $("#hintbox").scrollIntoView({behavior:reduce?"auto":"smooth",block:"nearest"});return}
+  if(t.dataset.opt!==undefined){
+    const o=G.parts[G.pi].opts[+t.dataset.opt];
+    if(o.ok){t.classList.add("right");answer(true)}else{t.classList.add("wrong");t.disabled=true;answer(false,o.fb)}
+    return}
+  if(t.hasAttribute("data-check"))return check();
+  if(t.id==="roll")return rollBonus();
+  if(t.id==="nextBtn"){if(!ST.best[G.n]||ST.best[G.n]<G.pts){ST.best[G.n]=Math.max(ST.best[G.n]||0,G.pts);save()}return G.n<40?play(G.n+1):home()}
+});
+document.addEventListener("keydown",ev=>{if(ev.key==="Enter"&&ev.target.classList&&ev.target.classList.contains("num")){ev.preventDefault();
+  const ins=[...document.querySelectorAll(`#pt${G.pi} input`)];const i=ins.indexOf(ev.target);if(i<ins.length-1&&!ins[i+1].value)ins[i+1].focus();else check()}});
+function check(){
+  const p=G.parts[G.pi],pt=$(`#pt${G.pi}`);
+  if(p.t==="num"){
+    const v=pt.querySelector("input").value.trim();if(v===""){feedback(false,"Escribe un número primero.");return}
+    const x=parseInt(v,10);
+    if(x===p.a)return answer(true);
+    return answer(false,p.tr&&p.tr[x]);
+  }
+  const [a,b]=[...pt.querySelectorAll("input")].map(i=>parseInt(i.value,10));
+  if(isNaN(a)||isNaN(b)){feedback(false,"Completa el numerador (arriba) y el denominador (abajo).");return}
+  if(b===0){feedback(false,"El denominador no puede ser 0: son los casos totales.");return}
+  const key=`${a}/${b}`;
+  if(a*p.a[1]===b*p.a[0]){
+    const g=gcd(a,b);
+    return answer(true,g>1?`Simplificada queda ${F(`[[${a/g}/${b/g}]]`)}.`:"");
+  }
+  if(a>b)return answer(false,"Una probabilidad nunca es mayor que 1: el numerador no puede pasar al denominador.");
+  answer(false,p.tr&&p.tr[key]);
+}
+
+/* guarda puntos si sale sin apretar "siguiente" */
+addEventListener("pagehide",()=>{if(G&&G.pi>=G.parts.length){ST.best[G.n]=Math.max(ST.best[G.n]||0,G.pts);save()}});
+home();
+</script>
+</html>
